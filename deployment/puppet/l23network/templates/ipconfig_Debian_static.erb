@@ -8,6 +8,10 @@ netmask <%= effective_netmask %>
 <% if @dns_search_string %>dns-search <%= @dns_search_string %><% end %>
 <% if @dns_domain_string %>dns-domain <%= @dns_domain_string %><% end %>
 <% if @mtu %>mtu <%= @mtu %><% end %>
+<% if @route_rules %>post-up ip route replace default via <%= @gateway %> dev <%= @interface %> table <%= @interface %>
+post-up ip rule add from <%= @effective_ipaddr %>/<%= @effective_netmask %> table <%= @interface %>
+pre-down ip route del default via <%= @gateway %> table <%= @interface %>
+pre-down ip rule del from <%= @effective_ipaddr %>/<%= @effective_netmask %> table <%= @interface %><% end %>
 <% if @bond_mode %>slaves none
 bond-mode <%= @bond_mode %><% if @bond_miimon %>
 bond-miimon <%= @bond_miimon %><% end %><% if @bond_lacp_rate %>
