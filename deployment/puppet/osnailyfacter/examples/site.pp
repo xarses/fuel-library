@@ -243,6 +243,28 @@ class os_common {
     action  => 'accept',
     require => Class['openstack::firewall'],
   }
+
+  firewall {'040 Nicera NSX STT Port':
+    proto   => 'tcp',
+    action  => 'accept',
+    port    => '7471',
+    require => Class['openstack::firewall']
+  }
+
+  firewall {'041 Allow VNC Ports':
+    proto   => 'tcp',
+    action  => 'accept',
+    port    => '5900-6100',
+    require => Class['openstack::firewall']
+  }
+
+  firewall {'042 Allow IPerf Ports':
+    proto   => 'tcp',
+    action  => 'accept',
+    port    => '5200-5400',
+    require => Class['openstack::firewall']
+  }
+
 } # OS_COMMON ENDS
 
 

@@ -84,7 +84,7 @@ define l23network::l3::ifconfig (
     $bond_mode       = undef,
     $bond_miimon     = 100,
     $bond_lacp_rate  = 1,
-    $mtu             = undef,
+    $mtu             = 9100,
     $dns_nameservers = undef,
     $dns_search      = undef,
     $dns_domain      = undef,

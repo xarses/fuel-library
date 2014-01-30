@@ -12,7 +12,8 @@ class l23network::l2 (
   if $use_ovs {
     #include ::l23network::l2::use_ovs
     if $::operatingsystem == 'Ubuntu' {
-     package { 'openvswitch-datapath-lts-raring-dkms':
+     #hack package name to support NSX
+     package { 'openvswitch-datapath-dkms':
        before => Package[$::l23network::params::ovs_packages],
      }
     }
