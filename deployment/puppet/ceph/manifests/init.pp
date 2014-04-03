@@ -4,27 +4,26 @@ class ceph (
       # General settings
       $cluster_node_address = $::ipaddress, #This should be the cluster service address
       $primary_mon          = $::hostname, #This should be the first controller
-      $mon_hosts            = nodes_with_roles($::fuel_settings['nodes'],
-                                               ['primary-controller', 'controller', 'ceph-mon'],
-                                               'name'),
-      $mon_ip_addresses     = nodes_with_roles($::fuel_settings['nodes'],
-                                               ['primary-controller', 'controller', 'ceph-mon'],
-                                               'internal_address'),
       $osd_devices          = split($::osd_devices_list, ' '),
       $use_ssl              = false,
       $use_rgw              = false,
 
       # ceph.conf Global settings
+      $fsid                      = undef,
       $auth_supported            = 'cephx',
       $osd_journal_size          = '2048',
       $osd_mkfs_type             = 'xfs',
-      $osd_pool_default_size     = $::fuel_settings['storage']['osd_pool_size'],
+      $osd_pool_default_size     = 2,
       $osd_pool_default_min_size = '1',
       # TODO: calculate PG numbers
       $osd_pool_default_pg_num   = '100',
       $osd_pool_default_pgp_num  = '100',
-      $cluster_network           = $::fuel_settings['storage_network_range'],
-      $public_network            = $::fuel_settings['management_network_range'],
+      $cluster_network           = undef,
+      $public_network            = undef,
+
+      #Monitor settings
+      $mon_hosts        = $::hostname,
+      $mon_ip_addresses = [$::ipaddress],
 
       # RadosGW settings
       $rgw_host                         = $::osfamily ? {'Debian'=> $::hostname, default => $::fqdn},
@@ -34,9 +33,9 @@ class ceph (
       $rgw_log_file                     = '/var/log/ceph/radosgw.log',
       $rgw_use_keystone                 = true,
       $rgw_use_pki                      = false,
-      $rgw_keystone_url                 = "${cluster_node_address}:5000",
-      $rgw_keystone_admin_token         = $::fuel_settings['keystone']['admin_token'],
-      $rgw_keystone_token_cache_size    = '10',
+      $rgw_keystone_url                 = "http://${cluster_node_address}:5000",
+      $rgw_keystone_admin_token         = "random_password",
+      $rgw_keystone_token_cache_size    = '100',
       $rgw_keystone_accepted_roles      = '_member_, Member, admin, swiftoperator',
       $rgw_keystone_revocation_interval = $::ceph::rgw_use_pki ? { false => 1000000, default => 60},
       $rgw_data                         = '/var/lib/ceph/radosgw',
@@ -72,9 +71,6 @@ class ceph (
   Exec { path => [ '/bin/', '/sbin/' , '/usr/bin/', '/usr/sbin/' ],
          cwd  => '/root',
   }
-
-  # Re-enable ceph::yum if not using a Fuel iso with Ceph packages
-  #include ceph::yum
 
   include ceph::ssh
   include ceph::params

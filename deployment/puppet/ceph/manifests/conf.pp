@@ -21,6 +21,7 @@ class ceph::conf {
     }
 
     ceph_conf {
+      'global/fsid':                      value => $::ceph::fsid;
       'global/auth_supported':            value => $::ceph::auth_supported;
       'global/osd_journal_size':          value => $::ceph::osd_journal_size;
       'global/osd_mkfs_type':             value => $::ceph::osd_mkfs_type;
