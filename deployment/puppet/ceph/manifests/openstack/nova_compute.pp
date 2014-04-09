@@ -5,6 +5,8 @@ class ceph::nova_compute (
   $compute_pool        = $::ceph::compute_pool,
 ) {
 
+  include ::ceph
+
   file {'/root/secret.xml':
     content => template('ceph/secret.erb')
   }

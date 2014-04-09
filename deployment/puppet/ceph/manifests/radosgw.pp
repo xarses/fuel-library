@@ -44,6 +44,8 @@ class ceph::radosgw (
     ensure  => 'latest',
   }
 
+  include ::ceph
+
   service { 'radosgw':
     ensure  => 'running',
     name    => $::ceph::params::service_radosgw,

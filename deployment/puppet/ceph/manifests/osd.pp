@@ -1,7 +1,10 @@
 # prepare and bring online the devices listed in $::ceph::osd_devices
 class ceph::osd (
   $devices = join(prefix($::ceph::osd_devices, "${::hostname}:"), ' '),
-){
+  ){
+
+  include ::ceph
+
   firewall {'011 ceph-osd allow':
     chain   => 'INPUT',
     dport   => '6800-7100',
@@ -32,7 +35,14 @@ class ceph::osd (
     logoutput => true,
   }
 
+  service {'ceph':
+      ensure  => 'running',
+      enable  => true,
+      require => Class['ceph::conf']
+    }
+
   Firewall['011 ceph-osd allow'] ->
   Exec['ceph-deploy osd prepare'] ->
-  Exec['ceph-deploy osd activate']
+  Exec['ceph-deploy osd activate'] ->
+  Service['ceph']
 }

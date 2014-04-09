@@ -4,6 +4,8 @@ class ceph::mon (
   $mon_ip_addresses = $::ceph::mon_ip_addresses,
 ) {
 
+  include ::ceph
+
   firewall {'010 ceph-mon allow':
     chain  => 'INPUT',
     dport  => 6789,
@@ -35,10 +37,17 @@ class ceph::mon (
                ],
   }
 
+  service {'ceph':
+      ensure  => 'running',
+      enable  => true,
+      require => Class['ceph::conf']
+    }
+
   Firewall['010 ceph-mon allow'] ->
   Exec['ceph-deploy mon create'] ->
   Exec['Wait for Ceph quorum']   ->
-  Exec['ceph-deploy gatherkeys']
+  Exec['ceph-deploy gatherkeys'] ->
+  Service['ceph']
 
   if $::hostname == $::ceph::primary_mon {
 
@@ -58,7 +67,7 @@ class ceph::mon (
     }
 
     Exec['ceph-deploy gatherkeys'] ->
-    Ceph_conf[['global/mon_host', 'global/mon_initial_members']] ->
-    Exec['reload Ceph for HA']
+    Ceph_conf[['global/mon_host', 'global/mon_initial_members']] ~>
+    Service['ceph']
   }
 }
