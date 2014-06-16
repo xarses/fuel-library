@@ -26,7 +26,12 @@ class neutron::agents::ovs (
 ) {
 
   include neutron::params
-  require vswitch::ovs
+  #require vswitch::ovs
+  define vs_bridge (
+    $ensure = undef
+    ) {
+    notify {"Short-Circuit upstream vswitch requirements":}
+  }
 
   if $enable_tunneling and ! $local_ip {
     fail('Local ip for ovs agent must be set when tunneling is enabled')
