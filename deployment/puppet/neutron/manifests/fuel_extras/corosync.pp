@@ -51,13 +51,13 @@ class neutron::fuel_extras::corosync (
       Neutron::Agents::Ovs {
         enabled         => false,
         manage_service  => false,
-        #before          => Cs_shadow['ovs']
+        before          => Neutron::Fuel_extras::Corosync::Cs_service['ovs']
       }
     } else {
       Neutron::Agents::Ml2::Ovs {
         enabled         => false,
         manage_service  => false,
-        #before          => Cs_shadow['ovs']
+        before          => Neutron::Fuel_extras::Corosync::Cs_service['ovs']
       }
     }
   } #End manage_ovs
@@ -76,15 +76,12 @@ class neutron::fuel_extras::corosync (
     Neutron::Agents::Metadata {
       enabled         => false,
       manage_service  => false,
-      #before          => Cs_shadow['neutron-metadata-agent']
+      before          => Neutron::Fuel_extras::Corosync::Cs_service['neutron-metadata-agent']
     }
 
   } # End manage_metadata
 
   if $manage_dhcp {
-    Cs_commit <| title == 'ovs' |> -> Cs_shadow <| title == 'dhcp' |>
-    Cs_commit <| title == 'neutron-metadata-agent' |> -> Cs_shadow <| title == 'dhcp' |>
-
     neutron::fuel_extras::corosync::cs_service {'dhcp':
       ocf_script      => 'neutron-agent-dhcp',
       csr_parameters  => {
@@ -103,10 +100,8 @@ class neutron::fuel_extras::corosync (
     if $manage_ovs {
 #      Neutron::Fuel_extras::Corosync::Cs_service['ovs'] ->
       neutron::fuel_extras::corosync::cs_with_service {'dhcp-and-ovs':
-        cib     => 'dhcp',
         first   => "p_${::neutron::params::ovs_agent_service}",
         second  => "p_${::neutron::params::dhcp_agent_service}",
-        before  => Cs_commit['dhcp'],
         require => Neutron::Fuel_extras::Corosync::Cs_service['ovs'],
       }
     }
@@ -114,10 +109,8 @@ class neutron::fuel_extras::corosync (
     if $manage_metadata {
 #      Neutron::Fuel_extras::Corosync::Cs_service['neutron-metadata-agent'] ->
       neutron::fuel_extras::corosync::cs_with_service {'dhcp-and-metadata':
-        cib     => 'dhcp',
         first   => "clone_p_${::neutron::params::metadata_agent_service}",
         second  => "p_${::neutron::params::dhcp_agent_service}",
-        before  => Cs_commit['dhcp'],
         require => Neutron::Fuel_extras::Corosync::Cs_service['neutron-metadata-agent']
       }
     }
@@ -125,13 +118,11 @@ class neutron::fuel_extras::corosync (
     Neutron::Agents::Dhcp {
       enabled         => false,
       manage_service  => false,
+      before          => Neutron::Fuel_extras::Corosync::Cs_service['dhcp']
     }
   } # End manage_dhcp
 
   if $manage_l3 {
-    Cs_commit <| title == 'ovs' |> -> Cs_shadow <| title == 'l3' |>
-    Cs_commit <| title == 'neutron-metadata-agent' |> -> Cs_shadow <| title == 'l3' |>
-    Cs_commit <| title == 'dhcp' |> -> Cs_shadow <| title == 'l3' |>
     neutron::fuel_extras::corosync::cs_service {'l3':
       ocf_script      => 'neutron-agent-l3',
       csr_parameters  => {
@@ -152,10 +143,8 @@ class neutron::fuel_extras::corosync (
     if $manage_ovs {
 #      Neutron::Fuel_extras::Corosync::Cs_service['ovs'] ->
       neutron::fuel_extras::corosync::cs_with_service {'l3-and-ovs':
-        cib     => 'l3',
         first   => "clone_p_${::neutron::params::ovs_agent_service}",
         second  => "p_${::neutron::params::l3_agent_service}",
-        before  => Cs_commit['l3'],
         require => Neutron::Fuel_extras::Corosync::Cs_service['ovs'],
       }
     }
@@ -163,10 +152,8 @@ class neutron::fuel_extras::corosync (
     if $manage_metadata {
 #      Neutron::Fuel_extras::Corosync::Cs_service['neutron-metadata-agent'] ->
       neutron::fuel_extras::corosync::cs_with_service {'l3-and-metadata':
-        cib     => 'l3',
         first   => "clone_p_${::neutron::params::metadata_agent_service}",
         second  => "p_${::neutron::params::l3_agent_service}",
-        before  => Cs_commit['l3'],
         require => Neutron::Fuel_extras::Corosync::Cs_service['neutron-metadata-agent']
       }
     }
@@ -175,38 +162,24 @@ class neutron::fuel_extras::corosync (
 #      Neutron::Fuel_extras::Corosync::Cs_service['dhcp'] ->
       cs_colocation { 'l3-keepaway-dhcp':
         ensure     => present,
-        cib        => 'l3',
         score      => '-100',
         primitives => [
           "p_${::neutron::params::dhcp_agent_service}",
           "p_${::neutron::params::l3_agent_service}"
         ],
-        before  => Cs_commit['l3'],
         require => Neutron::Fuel_extras::Corosync::Cs_service['dhcp']
       }
     }
 
-    #Cs_resource["p_${::neutron::params::l3_agent_service}"] ->
-    #  Neutron::Fuel_extras::Corosync::Cs_with_service[
-    #    'l3-and-ovs', 'l3-and-metadata']
+    Cs_resource["p_${::neutron::params::l3_agent_service}"] ->
+      Neutron::Fuel_extras::Corosync::Cs_with_service[
+        'l3-and-ovs', 'l3-and-metadata']
 
     Neutron::Agents::L3 {
       enabled         => false,
       manage_service  => false,
       before          => Neutron::Fuel_extras::Corosync::Cs_service['l3']
     }
-
-    #FIXME (xarses): These need to be propperly refactored to the new
-    # composition layer
-    ###
-    # Do not remember to be carefylly with Cs_shadow and Cs_commit orders.
-    # at one time onli one Shadow can be without commit
-    # FIXME(xarses) commented out, maybe we dont need this ordering now
-    #Cs_commit <| title == 'dhcp' |> -> Cs_shadow <| title == $name |>
-    #Cs_commit <| title == 'ovs' |> -> Cs_shadow <| title == $name |>
-    #Cs_commit <| title == 'neutron-metadata-agent' |> -> Cs_shadow <| title == $name |>
-
-
 
   } # End manage_l3
 

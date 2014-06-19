@@ -23,11 +23,8 @@ define neutron::fuel_extras::corosync::cs_service (
     source => "puppet:///modules/neutron/ocf/${ocf_script}",
   } ->
 
-  cs_shadow { $name: cib => $name } ->
-
   cs_resource { $service_name:
     ensure          => present,
-    cib             => $name,
     primitive_class => 'ocf',
     provided_by     => 'mirantis',
     primitive_type  => $ocf_script,
@@ -49,9 +46,7 @@ define neutron::fuel_extras::corosync::cs_service (
         'timeout' => $csr_timeout
       }
     },
-  } ->
-
-  cs_commit { $name: cib => $name }
+  }
 
   if $real_service {
     # If we have a real service, then we need to disable it. Some service
@@ -74,7 +69,7 @@ define neutron::fuel_extras::corosync::cs_service (
     hasstatus  => true,
     hasrestart => false,
     provider   => "pacemaker",
-    require    => Cs_Commit[$name]
+    require    => Cs_resource[$service_name]
   }
 
 }
