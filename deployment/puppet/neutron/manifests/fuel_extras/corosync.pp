@@ -1,9 +1,13 @@
 # Not a doc string
 class neutron::fuel_extras::corosync (
-  $manage_ovs = true,
-  $manage_metadata = true,
-  $manage_l3 = true,
-  $manage_dhcp = true
+  $auth_url = 'http://127.0.0.1:35357/v2.0',
+  $admin_tenant_name = 'services',
+  $admin_user = 'neutron',
+  $admin_password = 'asdf12345',
+  $ovs_ha = true,
+  $metadata_ha = true,
+  $l3_ha = true,
+  $dhcp_ha = true,
   )
 {
   $neutron_config = { keystone => {
@@ -29,14 +33,38 @@ class neutron::fuel_extras::corosync (
   ###### END HARD CODES FOR POC #####
 
   Package['pacemaker'] ->
-    File<| title == 'ocf-mirantis-path' |> ->
-    File<| title == 'q-agent-cleanup.py'|>
+  File<| title == 'ocf-mirantis-path' |> ->
+  Package['neutron'] ->
+
+  file {'q-agent-cleanup.py':
+    path   => '/usr/bin/q-agent-cleanup.py',
+    mode   => '0755',
+    owner  => root,
+    group  => root,
+    source => "puppet:///modules/neutron/q-agent-cleanup.py",
+  } ->
+
+  file {'neutron-root':
+    path => '/etc/sudoers.d/neutron-root',
+    mode => '0440',
+    owner => root,
+    group => root,
+    source => "puppet:///modules/neutron/neutron-root",
+  } ->
+
+  file {'/var/cache/neutron':
+    ensure  => directory,
+    path   => '/var/cache/neutron',
+    mode   => '0755',
+    owner  => neutron,
+    group  => neutron,
+  }
 
   if !defined(Package['lsof']) {
     package { 'lsof': }
   }
 
-  if $manage_ovs {
+  if $ovs_ha {
     neutron::fuel_extras::corosync::cs_service {'ovs':
       ocf_script          => 'neutron-agent-ovs',
       csr_multistate_hash => { 'type' => 'clone' },
@@ -60,9 +88,9 @@ class neutron::fuel_extras::corosync (
         before          => Neutron::Fuel_extras::Corosync::Cs_service['ovs']
       }
     }
-  } #End manage_ovs
+  } #End ovs_ha
 
-  if $manage_metadata {
+  if $metadata_ha {
     neutron::fuel_extras::corosync::cs_service {'neutron-metadata-agent':
       ocf_script          => 'neutron-agent-metadata',
       csr_multistate_hash => { 'type' => 'clone' },
@@ -79,9 +107,9 @@ class neutron::fuel_extras::corosync (
       before          => Neutron::Fuel_extras::Corosync::Cs_service['neutron-metadata-agent']
     }
 
-  } # End manage_metadata
+  } # End metadata_ha
 
-  if $manage_dhcp {
+  if $dhcp_ha {
     neutron::fuel_extras::corosync::cs_service {'dhcp':
       ocf_script      => 'neutron-agent-dhcp',
       csr_parameters  => {
@@ -97,7 +125,7 @@ class neutron::fuel_extras::corosync (
       service_name    => "p_${::neutron::params::dhcp_agent_service}",
     }
 
-    if $manage_ovs {
+    if $ovs_ha {
 #      Neutron::Fuel_extras::Corosync::Cs_service['ovs'] ->
       neutron::fuel_extras::corosync::cs_with_service {'dhcp-and-ovs':
         first   => "p_${::neutron::params::ovs_agent_service}",
@@ -106,7 +134,7 @@ class neutron::fuel_extras::corosync (
       }
     }
 
-    if $manage_metadata {
+    if $metadata_ha {
 #      Neutron::Fuel_extras::Corosync::Cs_service['neutron-metadata-agent'] ->
       neutron::fuel_extras::corosync::cs_with_service {'dhcp-and-metadata':
         first   => "clone_p_${::neutron::params::metadata_agent_service}",
@@ -120,9 +148,9 @@ class neutron::fuel_extras::corosync (
       manage_service  => false,
       before          => Neutron::Fuel_extras::Corosync::Cs_service['dhcp']
     }
-  } # End manage_dhcp
+  } # End dhcp_ha
 
-  if $manage_l3 {
+  if $l3_ha {
     neutron::fuel_extras::corosync::cs_service {'l3':
       ocf_script      => 'neutron-agent-l3',
       csr_parameters  => {
@@ -140,7 +168,7 @@ class neutron::fuel_extras::corosync (
       service_name    => "p_${::neutron::params::l3_agent_service}",
     }
 
-    if $manage_ovs {
+    if $ovs_ha {
 #      Neutron::Fuel_extras::Corosync::Cs_service['ovs'] ->
       neutron::fuel_extras::corosync::cs_with_service {'l3-and-ovs':
         first   => "clone_p_${::neutron::params::ovs_agent_service}",
@@ -149,7 +177,7 @@ class neutron::fuel_extras::corosync (
       }
     }
 
-    if $manage_metadata {
+    if $metadata_ha {
 #      Neutron::Fuel_extras::Corosync::Cs_service['neutron-metadata-agent'] ->
       neutron::fuel_extras::corosync::cs_with_service {'l3-and-metadata':
         first   => "clone_p_${::neutron::params::metadata_agent_service}",
@@ -158,7 +186,7 @@ class neutron::fuel_extras::corosync (
       }
     }
 
-    if $manage_dhcp {
+    if $dhcp_ha {
 #      Neutron::Fuel_extras::Corosync::Cs_service['dhcp'] ->
       cs_colocation { 'l3-keepaway-dhcp':
         ensure     => present,
@@ -181,6 +209,6 @@ class neutron::fuel_extras::corosync (
       before          => Neutron::Fuel_extras::Corosync::Cs_service['l3']
     }
 
-  } # End manage_l3
+  } # End l3_ha
 
 }

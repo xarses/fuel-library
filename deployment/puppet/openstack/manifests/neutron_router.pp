@@ -6,63 +6,58 @@
 class openstack::neutron_router (
   $verbose                  = false,
   $debug                    = false,
-  $enabled                  = true,
-  $neutron                  = true,
   $neutron_config           = {},
   $neutron_network_node     = false,
-  $neutron_server           = true,
   $use_syslog               = false,
   $syslog_log_facility      = 'LOG_LOCAL4',
   $ha_mode                  = false,
   $service_provider         = 'generic',
   #$internal_address         = $::ipaddress_br_mgmt,
-  # $public_interface         = "br-ex",
-  # $private_interface        = "br-mgmt",
-  # $create_networks          = true,
+  #$public_interface         = "br-ex",
+  #$private_interface        = "br-mgmt",
+  #$create_networks          = true,
 ) {
-    class { '::neutron':
-      neutron_config       => $neutron_config,
-      verbose              => $verbose,
-      debug                => $debug,
-      use_syslog           => $use_syslog,
-      syslog_log_facility  => $syslog_log_facility,
-      server_ha_mode       => $ha_mode,
-    }
-    #todo: add neutron::server here (into IF)
-    class { '::neutron::plugins::ovs':
-      neutron_config      => $neutron_config,
-      #bridge_mappings     => ["physnet1:br-ex","physnet2:br-prv"],
-    }
+  class { '::neutron':
+    verbose       => $verbose,
+    debug         => $debug,
+    use_syslog    => $use_syslog,
+    log_facility  => $syslog_log_facility,
+  }
+  #todo: add neutron::server here (into IF)
+  class { '::neutron::plugins::ovs':
+    neutron_config      => $neutron_config,
+    #bridge_mappings     => ["physnet1:br-ex","physnet2:br-prv"],
+  }
 
-    if $neutron_network_node {
-      class { '::neutron::agents::ovs':
-        service_provider => $service_provider,
-        neutron_config   => $neutron_config,      }
-      # neutron metadata agent starts only under pacemaker
-      # and co-located with l3-agent
-      class {'::neutron::agents::metadata':
-        verbose          => $verbose,
-        debug            => $debug,
-        service_provider => $service_provider,
-        neutron_config   => $neutron_config,
-      }
-      class { '::neutron::agents::dhcp':
-        neutron_config   => $neutron_config,
-        verbose          => $verbose,
-        debug            => $debug,
-        service_provider => $service_provider,
-      }
-      class { '::neutron::agents::l3':
-        neutron_config   => $neutron_config,
-        verbose          => $verbose,
-        debug            => $debug,
-        service_provider => $service_provider,
-
-      }
+  if $neutron_network_node {
+    class { '::neutron::agents::ovs':
+      service_provider => $service_provider,
+      neutron_config   => $neutron_config,      }
+    # neutron metadata agent starts only under pacemaker
+    # and co-located with l3-agent
+    class {'::neutron::agents::metadata':
+      verbose          => $verbose,
+      debug            => $debug,
+      service_provider => $service_provider,
+      neutron_config   => $neutron_config,
     }
-
-    if !defined(Sysctl::Value['net.ipv4.ip_forward']) {
-      sysctl::value { 'net.ipv4.ip_forward': value => '1'}
+    class { '::neutron::agents::dhcp':
+      neutron_config   => $neutron_config,
+      verbose          => $verbose,
+      debug            => $debug,
+      service_provider => $service_provider,
     }
+    class { '::neutron::agents::l3':
+      neutron_config   => $neutron_config,
+      verbose          => $verbose,
+      debug            => $debug,
+      service_provider => $service_provider,
+
+    }
+  }
+
+  if !defined(Sysctl::Value['net.ipv4.ip_forward']) {
+    sysctl::value { 'net.ipv4.ip_forward': value => '1'}
+  }
 
 }
