@@ -1,6 +1,6 @@
 # not a doc string
 
-define neutron::fuel_extras::corosync::cs_with_service (
+define cluster::corosync::cs_with_service (
   $first,
   $second,
   $cib = undef,

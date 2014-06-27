@@ -1,18 +1,44 @@
-g# Entry points for OpenStack networking services
+# Entry points for OpenStack networking services
 # not a doc string
 
 class openstack::network (
-  $use_ha = false,
-  $network_provider = 'nova',
-  $network_config = {},
-  $verbose,
-  $debug,
-  $use_syslog,
-  $syslog_log_facility,
-  $agents,
-  $compute,
+  $neutron_db_uri,
+  $network_provider = 'neutron',
+  $agents           = ['ovs']
+  $ha_agents        = false,
 
-  #Nova settings
+  $verbose    = false,
+  $debug      = false,
+  $use_syslog = flase,
+
+  $syslog_log_facility = 'LOG_USER',
+
+  # ML2 settings
+  $type_drivers          = ['local', 'flat', 'vlan', 'gre', 'vxlan'],
+  $tenant_network_types  = ['local', 'flat', 'vlan', 'gre', 'vxlan'],
+  $mechanism_drivers     = ['openvswitch', 'linuxbridge'],
+  $flat_networks         = ['*'],
+  $network_vlan_ranges   = ['physnet1:1000:2999'],
+  $tunnel_id_ranges      = ['20:100'],
+  $vxlan_group           = '224.0.0.1',
+  $vni_ranges            = ['10:100'],
+
+  # amqp
+  $rabbit_user ,
+  $rabbit_host ,
+  $rabbit_port ,
+  $rabbit_hosts ,
+  $rabbit_password ,
+
+  # keystone
+  $admin_password    = 'asdf123',
+  $admin_tenant_name = 'services',
+  $admin_username    = 'neutron',
+  $auth_url          = 'http://127.0.0.1:5000/v2.0',
+  $region            = 'RegionOne',
+  $api_url           = $quantum_config['server']['api_url'],
+
+  # Nova settings
   $private_interface,
   $public_interface,
   $floating_range,
@@ -23,17 +49,12 @@ class openstack::network (
   $network_size,
   $nameservers,
 
-  #openstack::network::agents settings
-  $ovs_enable = true,
-  $ovs_ha = true,
-  $ovs_us_ml2 = true,
-  $metadata_enable = true,
-  $metadata_ha = true,
-  $l3_enable = true,
-  $l3_ha = true,
-  $dhcp_enable = true,
-  $dhcp_ha = true
+  # Neutron
+  $base_mac     = 'fa:16:3e:00:00:00',
+  $core_plugin  = 'openvswitch'
 
+  # Precreate networks and routers
+  $precreate = {}
   )
 {
   case $network_provider {
@@ -55,132 +76,58 @@ class openstack::network (
     } # End case nova
     'neutron': {
       class {'::neutron':
-        verbose => $verbose,
-        debug => $debug,
-        use_syslog => $use_syslog,
-        log_facility => $syslog_log_facility,
-        base_mac =>
-        mac_generation_retries =>
-        dhcp_lease_duration =>
-        dhcp_agents_per_network =>
-        allow_overlapping_ips =>
-        rabbit_user =>
-        rabbit_host =>
-        rabbit_port =>
-        rabbit_hosts =>
-        rabbit_password =>
+        #verbose                 => $verbose,
+        debug                   => $debug,
+        use_syslog              => $use_syslog,
+        log_facility            => $syslog_log_facility,
+        base_mac                => $base_mac,
+        core_plugin             => $core_plugin,
+        mac_generation_retries  => 32,
+        dhcp_lease_duration     => 120,
+        dhcp_agents_per_network => 1,
+        report_interval         => 5,
+        rabbit_user             => $rabbit_user,
+        rabbit_host             => $rabbit_host,
+        rabbit_port             => $rabbit_port,
+        rabbit_hosts            => $rabbit_hosts,
+        rabbit_password         => $rabbit_password
 
       }
       if $::role =~ /controller|compute/ {
         class {'nova::network::neutron':
-          neutron_admin_password    => $quantum_config['keystone']['admin_password'],
-          neutron_admin_tenant_name => $quantum_config['keystone']['admin_tenant_name'],
-          neutron_region_name       => $quantum_config['keystone']['auth_region'],
-          neutron_admin_username    => $quantum_config['keystone']['admin_user'],
-          neutron_admin_auth_url    => $quantum_config['keystone']['auth_url'],
-          neutron_url               => $quantum_config['server']['api_url'],
+          neutron_admin_password    => $admin_password,
+          neutron_admin_tenant_name => $admin_tenant_name,
+          neutron_region_name       => $region,
+          neutron_admin_username    => $admin_username,
+          neutron_admin_auth_url    => $auth_url,
+          neutron_url               => $api_url,
         }
       }
-      if ($agents or $::role == 'compute') {
-        case $network_config['mechanism'] {
-          'ovs': {
-            # todo(xarses): computes don't need db connection data
-            class { '::neutron::plugins::ovs':
-              neutron_config      => $neutron_config,
-              #bridge_mappings     => ["physnet1:br-ex","physnet2:br-prv"],
-            }
-            class { 'neutron::agents::ovs':
-              neutron_config   => $quantum_config,
-              # bridge_uplinks   => ["br-prv:${private_interface}"],
-              # bridge_mappings  => ['physnet2:br-prv'],
-              # enable_tunneling => $enable_tunneling,
-              # local_ip         => $internal_address,
-            }
 
-          } # End case ovs
-          'linuxbridge': {} # End case linuxbridge
-        }
-      }
-      if $::role == 'controller' {
+      if $::role =~ /controller/ {
         class { '::neutron::server':
-          neutron_config     => $quantum_config,
-          primary_controller => $primary_controller
+          auth_password => $admin_password,
+          auth_tenant   => $admin_tenant_name,
+          auth_username => $admin_username,
+          auth_uri      => $auth_url,
+
+          database_retry_interval => 2,
+          database_connection     => $neutron_db_uri
+          database_max_retries    => -1
+
+          agent_down_time => 15
         }
       }
       if $agents {
-        class {'openstack::network::agents':
-          agents => $agents,
-          network_config => $network_config
+        class {'openstack::network::neutron_agents':
+          agents            => $agents,
+          admin_password    => $admin_password,
+          admin_tenant_name => $admin_tenant_name,
+          admin_username    => $admin_username,
+          auth_url          => $auth_url,
         }
 
       }
     } # End case neutron
   } # End Case
-}
-
-class openstack::network::neutron_agents (
-  $ovs_enable = true,
-  $ovs_ha = true,
-  $ovs_us_ml2 = true,
-  $metadata_enable = true,
-  $metadata_ha = true,
-  $l3_enable = true,
-  $l3_ha = true,
-  $dhcp_enable = true,
-  $dhcp_ha = true
-  ) {
-
-  if $ovs_enable {
-
-    if $ovs_us_ml2 {
-      #TODO: Remove when no longer supporting legacy OVS plugin
-       class { '::neutron::plugins::ovs':
-        neutron_config      => $neutron_config,
-        #bridge_mappings     => ["physnet1:br-ex","physnet2:br-prv"],
-      }
-    } else {
-      class {'::neutron::plugins:ml2':
-      }
-    }
-    class { '::neutron::agents::ovs':
-      service_provider => $service_provider,
-      neutron_config   => $neutron_config,
-    }
-  }
-
-  if $metadata_enable {
-    class {'::neutron::agents::metadata':
-      verbose          => $verbose,
-      debug            => $debug,
-      service_provider => $service_provider,
-      neutron_config   => $neutron_config,
-    }
-  }
-
-  if $dhcp_enable {
-    class { '::neutron::agents::dhcp':
-      neutron_config   => $neutron_config,
-      verbose          => $verbose,
-      debug            => $debug,
-      service_provider => $service_provider,
-    }
-  }
-
-  if $l3_enable {
-    class { '::neutron::agents::l3':
-      neutron_config   => $neutron_config,
-      verbose          => $verbose,
-      debug            => $debug,
-      service_provider => $service_provider,
-    }
-  }
-
-  class {'neutron::fuel_extras::corosync':
-    ovs_ha          => $ovs_ha,
-    metadata_ha     => $metadata_ha,
-    l3_ha           => $l3_ha,
-    dhcp_ha         => $dhcp_ha,
-    auth_url        => $auth_url,
-    admin_password  => $admin_password
-  }
 }

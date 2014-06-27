@@ -1,6 +1,6 @@
 # Not a doc string
 
-define neutron::fuel_extras::corosync::cs_service (
+define cluster::corosync::cs_service (
   $ocf_script,
   $service_name,
   $csr_multistate_hash = undef,
