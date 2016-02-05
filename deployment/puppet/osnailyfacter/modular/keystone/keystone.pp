@@ -86,7 +86,8 @@ $public_url   = "${public_protocol}://${public_address}:${public_port}"
 $admin_url    = "${admin_protocol}://${admin_address}:${admin_port}"
 $internal_url = "${internal_protocol}://${internal_address}:${internal_port}"
 
-$auth_suffix  = pick($keystone_hash['auth_suffix'], '/')
+#9-Kilo hack, keystone client requires /v2.0
+$auth_suffix  = pick($keystone_hash['auth_suffix'], '/v2.0')
 $auth_url     = "${internal_url}${auth_suffix}"
 
 $revoke_driver = 'keystone.contrib.revoke.backends.sql.Revoke'
@@ -174,8 +175,8 @@ class { 'keystone::wsgi::apache':
   threads               => 3,
   workers               => min($::processorcount, 6),
   ssl                   => $ssl,
-  vhost_custom_fragment => $vhost_limit_request_field_size,
-  access_log_format     => '%{X-Forwarded-For}i %l %u %t \"%r\" %>s %b %D \"%{Referer}i\" \"%{User-Agent}i\"',
+  #vhost_custom_fragment => $vhost_limit_request_field_size,
+  #access_log_format     => '%{X-Forwarded-For}i %l %u %t \"%r\" %>s %b %D \"%{Referer}i\" \"%{User-Agent}i\"',
 
   # ports and host should be set for ip_based vhost
   public_port           => $public_port,

@@ -130,7 +130,7 @@ class openstack::keystone (
       public_workers               => $service_workers,
       package_ensure               => $package_ensure,
       use_syslog                   => $use_syslog,
-      use_stderr                   => $use_stderr,
+      #use_stderr                   => $use_stderr,
       database_idle_timeout        => $database_idle_timeout,
       sync_db                      => $primary_controller,
       rabbit_password              => $rabbit_password,
@@ -145,12 +145,12 @@ class openstack::keystone (
       cache_backend                => $cache_backend,
       revoke_driver                => $revoke_driver,
       admin_endpoint               => $admin_url,
-      memcache_dead_retry          => '60',
-      memcache_socket_timeout      => '1',
-      memcache_pool_maxsize        =>'1000',
-      memcache_pool_unused_timeout => '60',
-      cache_memcache_servers       => $memcache_servers_real,
-      policy_driver                => 'keystone.policy.backends.sql.Policy',
+      #memcache_dead_retry          => '60',
+      #memcache_socket_timeout      => '1',
+      #memcache_pool_maxsize        =>'1000',
+      #memcache_pool_unused_timeout => '60',
+      #cache_memcache_servers       => $memcache_servers_real,
+      #policy_driver                => 'keystone.policy.backends.sql.Policy',
     }
 
     Package<| title == 'keystone'|> ~> Service<| title == 'keystone'|>
