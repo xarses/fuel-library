@@ -212,7 +212,7 @@ class openstack::nova::controller (
     rabbit_hosts           => split($amqp_hosts, ','),
     rabbit_userid          => $amqp_user,
     rabbit_password        => $amqp_password,
-    kombu_reconnect_delay  => '5.0',
+    #kombu_reconnect_delay  => '5.0',
     image_service          => 'nova.image.glance.GlanceImageService',
     glance_api_servers     => $glance_connection,
     verbose                => $verbose,
@@ -220,7 +220,7 @@ class openstack::nova::controller (
     ensure_package         => $ensure_package,
     log_facility           => $syslog_log_facility,
     use_syslog             => $use_syslog,
-    use_stderr             => $use_stderr,
+    #use_stderr             => $use_stderr,
     database_idle_timeout  => $idle_timeout,
     report_interval        => $nova_report_interval,
     service_down_time      => $nova_service_down_time,
@@ -228,7 +228,7 @@ class openstack::nova::controller (
     notify_api_faults      => $nova_hash['notify_api_faults'],
     notification_driver    => $notification_driver,
     memcached_servers      => $memcached_addresses,
-    cinder_catalog_info    => pick($nova_hash['cinder_catalog_info'], 'volumev2:cinderv2:internalURL'),
+    #cinder_catalog_info    => pick($nova_hash['cinder_catalog_info'], 'volumev2:cinderv2:internalURL'),
   }
 
   #NOTE(bogdando) exec update-kombu is always undef, so delete?
@@ -317,8 +317,8 @@ class openstack::nova::controller (
     osapi_compute_workers                => $service_workers,
     metadata_workers                     => $service_workers,
     sync_db                              => $primary_controller,
-    fping_path                           => $fping_path,
-    api_paste_config                     => '/etc/nova/api-paste.ini';
+    #fping_path                           => $fping_path,
+    #api_paste_config                     => '/etc/nova/api-paste.ini';
   }
 
   # From legacy init.pp
@@ -348,7 +348,7 @@ class openstack::nova::controller (
     enabled        => $enabled,
     ensure_package => $ensure_package,
     workers        => $service_workers,
-    use_local      => $nova_hash['use_local'],
+    #use_local      => $nova_hash['use_local'],
   }
 
   if $auto_assign_floating_ip {

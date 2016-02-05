@@ -263,13 +263,13 @@ class openstack::compute (
     rabbit_hosts           => split($amqp_hosts, ','),
     rabbit_userid          => $amqp_user,
     rabbit_password        => $amqp_password,
-    kombu_reconnect_delay  => '5.0',
+    #kombu_reconnect_delay  => '5.0',
     image_service          => 'nova.image.glance.GlanceImageService',
     glance_api_servers     => $glance_api_servers,
     verbose                => $verbose,
     debug                  => $debug,
     use_syslog             => $use_syslog,
-    use_stderr             => $use_stderr,
+    #use_stderr             => $use_stderr,
     log_facility           => $syslog_log_facility,
     state_path             => $state_path,
     report_interval        => $nova_report_interval,
@@ -277,7 +277,7 @@ class openstack::compute (
     notify_on_state_change => $notify_on_state_change,
     notification_driver    => $notification_driver,
     memcached_servers      => $memcached_addresses,
-    cinder_catalog_info    => pick($nova_hash['cinder_catalog_info'], 'volumev2:cinderv2:internalURL'),
+    #cinder_catalog_info    => pick($nova_hash['cinder_catalog_info'], 'volumev2:cinderv2:internalURL'),
   }
 
   if str2bool($::is_virtual) {
@@ -315,8 +315,8 @@ class openstack::compute (
     reserved_host_memory          => $nova_hash['reserved_host_memory'],
     default_availability_zone     => $nova_hash['default_availability_zone'],
     default_schedule_zone         => $nova_hash['default_schedule_zone'],
-    config_drive_format           => $config_drive_format,
-    allow_resize_to_same_host     => true,
+    #config_drive_format           => $config_drive_format,
+    #allow_resize_to_same_host     => true,
   }
 
   nova_config {
