@@ -162,6 +162,7 @@ if $queue_provider == 'rabbitmq' {
       userid         => $rabbit_hash['user'],
       password       => $rabbit_hash['password'],
       require        => Class['::rabbitmq'],
+      rabbitmq_class => false, #Kilo-support
     }
 
     if ($use_pacemaker) {
