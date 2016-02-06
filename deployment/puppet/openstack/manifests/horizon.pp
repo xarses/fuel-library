@@ -79,8 +79,8 @@ class openstack::horizon (
     bind_address          => $bind_address,
     cache_server_ip       => $cache_server_ip,
     cache_server_port     => $cache_server_port,
-    cache_backend         => $cache_backend,
-    cache_options         => $cache_options,
+    #cache_backend         => $cache_backend,
+    #cache_options         => $cache_options,
     secret_key            => $secret_key,
     package_ensure        => $package_ensure,
     horizon_app_links     => $horizon_app_links,
@@ -89,7 +89,7 @@ class openstack::horizon (
     django_debug          => $django_debug,
     api_result_limit      => $api_result_limit,
     listen_ssl            => $use_ssl,
-    ssl_no_verify         => $ssl_no_verify,
+    #ssl_no_verify         => $ssl_no_verify,
     log_level             => $log_level_real,
     configure_apache      => false,
     django_session_engine => $django_session_engine,
@@ -98,10 +98,10 @@ class openstack::horizon (
     log_handler           => $log_handler,
     cinder_options        => $cinder_options,
     neutron_options       => $neutron_options,
-    custom_theme_path     => $custom_theme_path,
-    redirect_type         => 'temp', # LP#1385133
+    #custom_theme_path     => $custom_theme_path,
+    #redirect_type         => 'temp', # LP#1385133
     hypervisor_options    => $hypervisor_options,
-    overview_days_range   => $overview_days_range,
+    #overview_days_range   => $overview_days_range,
     file_upload_temp_dir  => $file_upload_temp_dir,
     api_versions          => $api_versions,
   }
