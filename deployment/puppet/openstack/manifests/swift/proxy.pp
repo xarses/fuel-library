@@ -85,9 +85,9 @@ class openstack::swift::proxy (
           @proxy_pipeline.insert(-2, 'ceilometer').join(',')
        %>"), ',')
     class { '::swift::proxy::ceilometer':
-      rabbit_user     => $rabbit_user,
-      rabbit_password => $rabbit_password,
-      rabbit_hosts    => $rabbit_hosts,
+      #rabbit_user     => $rabbit_user,
+      #rabbit_password => $rabbit_password,
+      #rabbit_hosts    => $rabbit_hosts,
     }
   }
   else {
@@ -185,7 +185,7 @@ class openstack::swift::proxy (
     }
 
     # resource ordering
-    Swift::Ringbuilder::Rebalance <||> -> Service['swift-proxy-server']
+    Swift::Ringbuilder::Rebalance <||> -> Service['swift-proxy']
     Swift::Ringbuilder::Rebalance <||> -> Swift::Storage::Generic <| |>
     Swift::Ringbuilder::Create<||> ->
     Ring_devices<||> ~>
@@ -210,6 +210,6 @@ class openstack::swift::proxy (
       recursive => true,
     }
 
-    Swift::Ringsync <| |> ~> Service['swift-proxy-server']
+    Swift::Ringsync <| |> ~> Service['swift-proxy']
   }
 }
