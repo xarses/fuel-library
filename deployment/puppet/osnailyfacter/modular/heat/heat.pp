@@ -101,7 +101,7 @@ class { 'openstack::heat' :
   keystone_tenant          => $keystone_tenant,
   keystone_ec2_uri         => "${internal_auth_protocol}://${internal_auth_address}:5000/v2.0",
   region                   => $region,
-  rpc_backend              => 'rabbit',
+  rpc_backend              => 'heat.openstack.common.rpc.impl_kombu',
   amqp_hosts               => split(hiera('amqp_hosts',''), ','),
   heat_protocol            => $heat_protocol,
   amqp_user                => $rabbit_hash['user'],
@@ -179,7 +179,7 @@ class { 'heat::keystone::domain' :
   domain_admin       => 'heat_admin',
   domain_password    => $heat_hash['user_password'],
   domain_admin_email => 'heat_admin@localhost',
-  manage_domain      => true,
+  #manage_domain      => true,
 }
 
 Class['heat'] ->

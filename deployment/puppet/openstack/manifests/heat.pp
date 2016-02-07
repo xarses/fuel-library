@@ -149,7 +149,7 @@ class openstack::heat (
     sync_db               => $primary_controller,
 
     rpc_backend           => $rpc_backend,
-    rpc_response_timeout  => '600',
+    #rpc_response_timeout  => '600',
     rabbit_hosts          => $amqp_hosts,
     rabbit_userid         => $amqp_user,
     rabbit_password       => $amqp_password,
@@ -159,16 +159,16 @@ class openstack::heat (
     verbose               => $verbose,
     debug                 => $debug,
     use_syslog            => $use_syslog,
-    use_stderr            => $use_stderr,
+    #use_stderr            => $use_stderr,
     log_facility          => $syslog_log_facility,
 
-    max_template_size     => '5440000',
-    max_json_body_size    => '10880000',
-    notification_driver   => 'heat.openstack.common.notifier.rpc_notifier',
+    #max_template_size     => '5440000',
+    #max_json_body_size    => '10880000',
+    #notification_driver   => 'heat.openstack.common.notifier.rpc_notifier',
 
-    database_max_pool_size => $max_pool_size,
-    database_max_overflow  => $max_overflow,
-    database_max_retries   => $max_retries,
+    #database_max_pool_size => $max_pool_size,
+    #database_max_overflow  => $max_overflow,
+    #database_max_retries   => $max_retries,
   }
 
   # Engine
@@ -179,9 +179,9 @@ class openstack::heat (
     heat_waitcondition_server_url => $waitcondition_server_url,
     heat_watch_server_url         => $watch_server_url,
     trusts_delegated_roles        => $trusts_delegated_roles,
-    max_resources_per_stack       => '20000',
-    instance_connection_https_validate_certificates => $ic_https_validate_certs,
-    instance_connection_is_secure => $ic_is_secure,
+    #max_resources_per_stack       => '20000',
+    #instance_connection_https_validate_certificates => $ic_https_validate_certs,
+    #instance_connection_is_secure => $ic_is_secure,
   }
 
   # Install the heat APIs
