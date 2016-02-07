@@ -99,15 +99,37 @@ if $use_neutron {
     enable_distributed_routing => $dvr,
     l2_population              => $l2_population,
     arp_responder              => $l2_population,
-    manage_vswitch             => false,
+    #manage_vswitch             => false,
     manage_service             => true,
     enabled                    => true,
   }
 
-  # Synchronize database after plugin was configured
+# TODO(Xarses): This needs to be removed when https://bugs.launchpad.net/mos/+bug/1537941
+  # is resolved.
+  exec { 'kilo-neutron-plugin':
+    command => 'ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini',
+    path    => '/bin:/sbin:/usr/bin:/usr/sbin',
+    unless  => 'test -f /etc/neutron/plugin.ini',
+    require => Package[$::neutron::params::ovs_agent_package],
+  } ~> Service[$::neutron::params::ovs_agent_service]
+
   if $primary_controller {
-    include ::neutron::db::sync
+  #  include ::neutron::db::sync
+    $extra_params = '--config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini'
+    Package['neutron', 'neutron-ovs-agent'] ~> Exec['neutron-db-sync']
+    Exec['neutron-db-sync'] ~> Service['neutron-server']
+
+    Neutron_config<||> ~> Exec['neutron-db-sync']
+    Neutron_config<| title == 'database/connection' |> ~> Exec['neutron-db-sync']
+
+    exec { 'neutron-db-sync':
+      command     => "neutron-db-manage ${extra_params} upgrade head",
+      path        => '/usr/bin',
+      refreshonly => true,
+      logoutput   => on_failure,
+    }
   }
+
 
   if $node_name in keys($neutron_nodes) {
     if $neutron_server_enable {

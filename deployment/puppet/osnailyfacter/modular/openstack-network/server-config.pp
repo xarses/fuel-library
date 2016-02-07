@@ -55,7 +55,7 @@ if $use_neutron {
 
   $auth_api_version        = 'v2.0'
   $identity_uri            = "${internal_auth_protocol}://${internal_auth_endpoint}:5000/"
-  $nova_admin_auth_url     = "${admin_auth_protocol}://${admin_auth_endpoint}:35357/"
+  $nova_admin_auth_url     = "${admin_auth_protocol}://${admin_auth_endpoint}:35357/v2.0"
   $nova_url                = "${nova_internal_protocol}://${nova_internal_endpoint}:8774/v2"
 
   $workers_max             = hiera('workers_max', 16)
@@ -146,9 +146,9 @@ if $use_neutron {
     tunnel_id_ranges      => $tunnel_id_ranges,
     vxlan_group           => $vxlan_group,
     vni_ranges            => $tunnel_id_ranges,
-    physical_network_mtus => $physical_network_mtus,
+    physnet_mtus          => $physical_network_mtus,
     path_mtu              => $overlay_net_mtu,
-    extension_drivers     => $extension_drivers,
+    #extension_drivers     => $extension_drivers,
   }
 
   class { 'neutron::server':
@@ -189,11 +189,11 @@ if $use_neutron {
 
   class { 'neutron::server::notifications':
     nova_url     => $nova_url,
-    auth_url     => $nova_admin_auth_url,
-    username     => $nova_auth_user,
-    tenant_name  => $nova_auth_tenant,
-    password     => $nova_auth_password,
-    region_name  => $auth_region,
+    nova_admin_auth_url     => $nova_admin_auth_url,
+    nova_admin_username     => $nova_auth_user,
+    nova_admin_tenant_name  => $nova_auth_tenant,
+    nova_admin_password     => $nova_auth_password,
+    nova_region_name  => $auth_region,
   }
 
   # Stub for Nuetron package

@@ -82,8 +82,8 @@ if $use_neutron {
     create_networks   => false, # lp/1501767
     num_networks      => $num_networks,
     network_size      => $network_size,
-    dns1              => $nameservers[0],
-    dns2              => $nameservers[1],
+    #dns1              => $nameservers[0],
+    #dns2              => $nameservers[1],
     enabled           => $enable_nova_net,
     install_service   => false, # because controller
   }

@@ -71,7 +71,7 @@ if $use_neutron {
     verbose                 => $verbose,
     debug                   => $debug,
     use_syslog              => $use_syslog,
-    use_stderr              => $use_stderr,
+    #use_stderr              => $use_stderr,
     log_facility            => $log_facility,
     bind_host               => $bind_host,
     base_mac                => $base_mac,
@@ -87,7 +87,7 @@ if $use_neutron {
     rabbit_password         => $amqp_password,
     kombu_reconnect_delay   => '5.0',
     network_device_mtu      => $overlay_net_mtu,
-    advertise_mtu           => true,
+    #advertise_mtu           => true,
   }
 
   if $default_log_levels {
