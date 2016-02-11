@@ -14,7 +14,7 @@ if $use_neutron {
   ]
 
   $rabbit_hash      = hiera_hash('rabbit_hash', {})
-  $ceilometer_hash  = hiera_hash('ceilometer', {})
+  $ceilometer_hash  = hiera_hash('ceilometer_hash', {})
   $network_scheme   = hiera_hash('network_scheme', {})
 
   $verbose      = pick($openstack_network_hash['verbose'], hiera('verbose', true))

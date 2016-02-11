@@ -60,10 +60,15 @@ class openstack::ceilometer (
   # This class is required by ceilometer agents & api classes
   # The metering_secret parameter is mandatory
   class { '::ceilometer':
+    # NOTE: if you're using 'stable/kilo' branch of ceilometer puppet module
+    # from upstream repo https://github.com/fuel-infra/puppet-ceilometer
+    # comment out options 'http_timeout', 'event_time_to_live', 
+    # 'metering_time_to_live', 'use_stderr'
+    # as they will not be recognized by class ::ceilometer
     http_timeout               => $http_timeout,
     event_time_to_live         => $event_time_to_live,
     metering_time_to_live      => $metering_time_to_live,
-    alarm_history_time_to_live => $alarm_history_time_to_live,
+    #alarm_history_time_to_live => $alarm_history_time_to_live,
     package_ensure             => 'present',
     rabbit_hosts               => split($amqp_hosts, ','),
     rabbit_userid              => $amqp_user,
@@ -78,7 +83,7 @@ class openstack::ceilometer (
 
   # Configure authentication for agents
   class { '::ceilometer::agent::auth':
-    auth_url         => "${keystone_protocol}://${keystone_host}:5000/v2.0",
+    auth_url         => $keystone_auth_uri,
     auth_password    => $keystone_password,
     auth_region      => $keystone_region,
     auth_tenant_name => $keystone_tenant,
@@ -117,7 +122,7 @@ class openstack::ceilometer (
       keystone_tenant       => $keystone_tenant,
       host                  => $host,
       port                  => $port,
-      api_workers           => $api_workers,
+      #api_workers           => $api_workers,
     }
 
     # Clean up expired data once a week
@@ -130,7 +135,7 @@ class openstack::ceilometer (
     }
 
     class { '::ceilometer::collector':
-      collector_workers => $collector_workers,
+      #collector_workers => $collector_workers,
     }
 
     class { '::ceilometer::alarm::evaluator':
@@ -140,7 +145,7 @@ class openstack::ceilometer (
     class { '::ceilometer::alarm::notifier': }
 
     class { '::ceilometer::agent::notification':
-      notification_workers => $notification_workers,
+      #notification_workers => $notification_workers,
       store_events         => true,
     }
 
