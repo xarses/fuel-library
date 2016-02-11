@@ -100,28 +100,28 @@ if $murano_hash['enabled'] {
     use_stderr          => $use_stderr,
     log_facility        => $syslog_log_facility_murano,
     database_connection => $db_connection,
-    sync_db             => $primary_controller,
-    auth_uri            => "${public_auth_protocol}://${public_auth_address}:5000/v2.0/",
-    admin_user          => $murano_user,
-    admin_password      => $murano_hash['user_password'],
-    admin_tenant_name   => $tenant,
+    #sync_db            => $primary_controller,
+    keystone_uri        => "${public_auth_protocol}://${public_auth_address}:5000/v2.0/",
+    keystone_username   => $murano_user,
+    keystone_password   => $murano_hash['user_password'],
+    keystone_tenant     => $tenant,
     identity_uri        => "${admin_auth_protocol}://${admin_auth_address}:35357/",
     use_neutron         => $use_neutron,
     rabbit_os_user      => $rabbit_hash['user'],
     rabbit_os_password  => $rabbit_hash['password'],
     rabbit_os_port      => $amqp_port,
-    rabbit_os_host      => split($amqp_hosts, ','),
+    rabbit_os_hosts     => split($amqp_hosts, ','),
     rabbit_ha_queues    => $rabbit_ha_queues,
     rabbit_own_host     => $public_ip,
     rabbit_own_port     => $murano_hash['rabbit']['port'],
-    rabbit_own_vhost    => $murano_hash['rabbit']['vhost'],
+    #rabbit_own_vhost    => $murano_hash['rabbit']['vhost'],
     rabbit_own_user     => $rabbit_hash['user'],
     rabbit_own_password => $rabbit_hash['password'],
-    default_nameservers => pick($external_dns['dns_list'], '8.8.8.8'),
+    #default_nameservers => pick($external_dns['dns_list'], '8.8.8.8'),
     service_host        => $api_bind_host,
     service_port        => $api_bind_port,
     external_network    => $external_network,
-    use_trusts          => true,
+    #use_trusts          => true,
   }
 
   # TODO (iberezovskiy): Move to globals (as it is done for sahara)
@@ -142,18 +142,19 @@ if $murano_hash['enabled'] {
   class { 'murano::api':
     host    => $api_bind_host,
     port    => $api_bind_port,
-    sync_db => false,
+    #sync_db => false,
   }
 
   class { 'murano::engine':
-    sync_db => false,
+    #sync_db => false,
   }
 
   class { 'murano::client': }
 
   class { 'murano::dashboard':
+    api_url  => "http://${api_bind_host}:${api_bind_port}",
     repo_url => $repository_url,
-    sync_db  => false,
+    #sync_db  => false,
   }
 
   if $murano_plugins and $murano_plugins['glance_artifacts_plugin'] and $murano_plugins['glance_artifacts_plugin']['enabled'] {
@@ -200,7 +201,14 @@ if $murano_hash['enabled'] {
     $admin_identity_url = "${admin_auth_protocol}://${admin_auth_address}:35357"
 
     class {'::osnailyfacter::wait_for_keystone_backends':}
-    murano::application { 'io.murano' : }
+    murano::application { 'io.murano' :
+      os_tenant_name => $tenant,
+      os_username    => $murano_user,
+      os_password    => $murano_hash['user_password'],
+      os_auth_url    => "${public_auth_protocol}://${public_auth_address}:5000/v2.0/",
+      os_region      => $region,
+      mandatory      => true,
+    }
 
     Class['::osnailyfacter::wait_for_keystone_backends'] -> ::Osnailyfacter::Wait_for_backend['murano-api']
     ::Osnailyfacter::Wait_for_backend['murano-api'] -> Murano::Application['io.murano']
