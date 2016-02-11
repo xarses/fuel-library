@@ -93,8 +93,8 @@ mod 'postgresql',
 
 # Pull in puppet-openstacklib
 mod 'openstacklib',
-    :git => 'https://github.com/fuel-infra/puppet-openstacklib.git',
-    :ref => '8.0.0-rc1'
+    :git => 'https://github.com/xarses/fuel-puppet-openstacklib.git',
+    :ref => 'stable/kilo'
 
 # Pull in puppet-keystone
 mod 'keystone',
@@ -103,8 +103,8 @@ mod 'keystone',
 
 # Pull in puppet-neutron
 mod 'neutron',
-    :git => 'https://github.com/fuel-infra/puppet-neutron.git',
-    :ref => '8.0.0-rc2'
+    :git => 'https://github.com/xarses/fuel-puppet-neutron.git',
+    :ref => 'stable/kilo'
 
 # Pull in puppet-nova
 mod 'nova',
@@ -133,8 +133,8 @@ mod 'swift',
 
 # Pull in puppet-ceilometer
 mod 'ceilometer',
-    :git => 'https://github.com/fuel-infra/puppet-ceilometer.git',
-    :ref => '8.0.0-rc1'
+    :git => 'https://github.com/xarses/fuel-puppet-ceilometer.git',
+    :ref => 'stable/kilo'
 
 # Pull in openstack-cinder
 mod 'cinder',
@@ -183,8 +183,8 @@ mod 'ironic',
 
 # Pull in puppet-murano
 mod 'murano',
-    :git => 'https://github.com/fuel-infra/puppet-murano.git',
-    :ref => '7.0.0-rc5'
+    :git => 'https://github.com/xarses/fuel-puppet-murano.git',
+    :ref => 'stable/kilo'
 
 # Pull in richardc-datacat
 mod 'datacat',
