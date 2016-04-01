@@ -210,7 +210,7 @@
     cmd: ruby /etc/puppet/modules/osnailyfacter/modular/openstack-haproxy/openstack-haproxy-ceilometer_post.rb
 
 - id: openstack-haproxy-aodh
-  type: puppet
+  type: skipped
   version: 2.0.0
   groups: [primary-controller, controller]
   required_for: [deploy_end]

@@ -1,5 +1,5 @@
 - id: aodh
-  type: puppet
+  type: skipped
   version: 2.0.0
   groups: [primary-controller, controller]
   required_for: [ceilometer-controller, openstack-controller]
@@ -18,7 +18,7 @@
     cmd: ruby /etc/puppet/modules/openstack_tasks/examples/aodh/aodh_post.rb
 
 - id: aodh-keystone
-  type: puppet
+  type: skipped
   version: 2.0.0
   groups: [primary-controller]
   required_for: [aodh]
@@ -32,7 +32,7 @@
     timeout: 1800
 
 - id: aodh-db
-  type: puppet
+  type: skipped
   version: 2.0.0
   groups: [primary-controller]
   cross-depends:
