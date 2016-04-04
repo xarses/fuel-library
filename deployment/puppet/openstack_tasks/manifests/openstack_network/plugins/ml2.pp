@@ -179,7 +179,8 @@ class openstack_tasks::openstack_network::plugins::ml2 {
       if $ha_agent {
         #Exec<| title == 'waiting-for-neutron-api' |> ->
         class { '::cluster::neutron::ovs' :
-          primary => $primary_controller,
+          primary       => $primary_controller,
+          plugin_config => '/etc/neutron/plugin.ini', #9-Kilo
         }
       }
     }
