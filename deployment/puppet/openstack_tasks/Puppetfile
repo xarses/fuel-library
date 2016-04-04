@@ -30,7 +30,7 @@
 # Pull in puppet-ceilometer
 mod 'ceilometer',
     :git => 'https://github.com/xarses/fuel-puppet-ceilometer.git',
-    :ref => 'stable/kilo'
+    :ref => 'stable/9-Kilo'
 
 # Pull in openstack-cinder
 mod 'cinder',

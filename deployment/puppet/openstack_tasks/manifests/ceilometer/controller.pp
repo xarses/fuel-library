@@ -198,6 +198,9 @@ class openstack_tasks::ceilometer::controller {
       ipmi_namespace    => false
     }
 
+    # 9-Kilo
+    include ::openstack_tasks::ceilometer::pre_aodh
+
     if ($swift_rados_backend) {
       ceilometer_config {
         'DEFAULT/swift_rados_backend' : value => true;
