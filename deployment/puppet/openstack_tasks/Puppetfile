@@ -65,7 +65,7 @@ mod 'keystone',
 # Pull in puppet-openstacklib
 mod 'openstacklib',
     :git => 'https://github.com/xarses/fuel-puppet-openstacklib.git',
-    :ref => 'stable/kilo'
+    :ref => 'stable/9-kilo'
 
 # Pull in puppet-neutron
 mod 'neutron',
@@ -74,8 +74,8 @@ mod 'neutron',
 
 # Pull in puppet-nova
 mod 'nova',
-    :git => 'https://github.com/fuel-infra/puppet-nova.git',
-    :ref => 'stable/kilo'
+    :git => 'https://github.com/xarses/fuel-puppet-nova.git',
+    :ref => 'stable/9-kilo'
 
 # Pull in puppet-murano
 mod 'murano',
