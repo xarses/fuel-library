@@ -33,7 +33,7 @@ class fuel::keystone (
   class { '::keystone':
     # (TODO iberezovskiy): Set 'enable_bootstrap' to true when MOS packages will
     # be updated and 'keystone-manage bootstrap' command will be available
-    enable_bootstrap     => false,
+    #enable_bootstrap     => false, #9-kilo
     admin_token          => $admin_token,
     catalog_type         => 'sql',
     database_connection  => "${db_engine}://${db_user}:${db_password}@${db_host}:${db_port}/${db_name}",
