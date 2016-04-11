@@ -13,7 +13,7 @@ class openstack_tasks::openstack_network::server_nova {
     $admin_tenant_name         = try_get_value($neutron_config, 'keystone/admin_tenant', 'services')
     $admin_username            = try_get_value($neutron_config, 'keystone/admin_user', 'neutron')
     $region_name               = hiera('region', 'RegionOne')
-    $auth_api_version          = 'v3'
+    $auth_api_version          = 'v2.0'
     $ssl_hash                  = hiera_hash('use_ssl', {})
 
     $admin_auth_protocol       = get_ssl_property($ssl_hash, {}, 'keystone', 'admin', 'protocol', 'http')
@@ -29,11 +29,11 @@ class openstack_tasks::openstack_network::server_nova {
     $floating_net              = pick($neutron_config['default_floating_net'], 'net04_ext')
 
     class { '::nova::network::neutron' :
-      neutron_password     => $admin_password,
-      neutron_project_name => $admin_tenant_name,
+      neutron_admin_password     => $admin_password,
+      neutron_admin_tenant_name => $admin_tenant_name,
       neutron_region_name  => $region_name,
-      neutron_username     => $admin_username,
-      neutron_auth_url     => $neutron_auth_url,
+      neutron_admin_username     => $admin_username,
+      neutron_admin_auth_url     => $neutron_auth_url,
       neutron_url          => $neutron_url,
       neutron_ovs_bridge   => $neutron_ovs_bridge,
     }
@@ -83,8 +83,8 @@ class openstack_tasks::openstack_network::server_nova {
       create_networks   => false, # lp/1501767
       num_networks      => $num_networks,
       network_size      => $network_size,
-      dns1              => $nameservers[0],
-      dns2              => $nameservers[1],
+      #dns1              => $nameservers[0],
+      #dns2              => $nameservers[1],
       enabled           => $enable_nova_net,
       install_service   => false, # because controller
     }

@@ -25,17 +25,20 @@ class openstack_tasks::murano::keystone_cfapi {
   $public_url        = "${public_protocol}://${public_address}:${api_bind_port}"
   $internal_url      = "${internal_protocol}://${internal_address}:${api_bind_port}"
   $admin_url         = "${admin_protocol}://${admin_address}:${api_bind_port}"
-
+  $openstack_release = 'stable/kilo'
   #################################################################
-
-  class { '::osnailyfacter::wait_for_keystone_backends':}
-  class { '::murano::keystone::cfapi_auth':
-    password     => $murano_hash['user_password'],
-    region       => $region,
-    tenant       => $tenant,
-    public_url   => $public_url,
-    internal_url => $internal_url,
-    admin_url    => $admin_url,
+  # Disable for Openstack Kilo as Murano does not support cfapi
+  # on that release
+  if $openstack_release != 'stable/kilo' {
+    class { '::osnailyfacter::wait_for_keystone_backends':}
+    class { '::murano::keystone::cfapi_auth':
+      password     => $murano_hash['user_password'],
+      region       => $region,
+      tenant       => $tenant,
+      public_url   => $public_url,
+      internal_url => $internal_url,
+      admin_url    => $admin_url,
+    }
   }
 
 }

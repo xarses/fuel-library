@@ -12,7 +12,7 @@ class openstack_tasks::openstack_network::plugins::ml2 {
     } ~> Service['neutron-ovs-agent-service']
   }
 
-  if $use_neutron {
+  #  if $use_neutron {
     include ::neutron::params
 
     $node_name = hiera('node_name')
@@ -95,6 +95,18 @@ class openstack_tasks::openstack_network::plugins::ml2 {
       $enable_tunneling = true
     }
 
+    # TODO(skolekonov) Remove this once Neutron packages are updated
+    #### REBASE_START Clarify with Andrey Bubyr  the purpose of this fix
+    #    if $compute and $::os_package_type == 'debian' {
+    #      augeas { '/etc/default/neutron-openvswitch-agent:ovs_config':
+    #        context => '/files/etc/default/neutron-openvswitch-agent',
+    #        changes => 'set DAEMON_ARGS \'"$DAEMON_ARGS --config-file /etc/neutron/plugins/ml2/openvswitch_agent.ini"\'',
+    #        notify  => Service['neutron-ovs-agent-service'],
+    #      }
+    #      Package['neutron-ovs-agent'] -> Augeas['/etc/default/neutron-openvswitch-agent:ovs_config']
+    #    }
+      #### REBASE_END
+
     if $enable_dpdk and $compute {
       neutron_agent_ovs {
         'securitygroup/enable_security_group': value => false;
@@ -113,6 +125,21 @@ class openstack_tasks::openstack_network::plugins::ml2 {
     }
 
     Neutron_agent_ovs<||> ~> Service['neutron-ovs-agent-service']
+  # TODO(skolekonov) Fuel uses debian naming scheme for packages, however
+  # Neutron packages still use Ubuntu maning scheme.
+  # Remove after transition to Mitaka
+  Service<| title == 'neutron-ovs-agent-service' |> {
+    name => 'neutron-plugin-openvswitch-agent',
+  }
+  Package<| title == 'neutron-ovs-agent' |> {
+    name => 'neutron-plugin-openvswitch-agent',
+  }
+  Cluster::Corosync::Cs_service<| title == 'ovs' |> {
+    service_name        => 'neutron-plugin-openvswitch-agent',
+    package_name        => 'neutron-plugin-openvswitch-agent',
+  }
+
+
 
     class { '::neutron::agents::ml2::ovs':
       bridge_mappings            => $bridge_mappings,
@@ -123,13 +150,22 @@ class openstack_tasks::openstack_network::plugins::ml2 {
       l2_population              => $l2_population,
       arp_responder              => $l2_population,
       firewall_driver            => $firewall_driver,
-      datapath_type              => $ovs_datapath_type,
-      vhostuser_socket_dir       => $ovs_vhostuser_socket_dir,
-      extensions                 => $extensions,
-      manage_vswitch             => false,
+      #datapath_type              => $ovs_datapath_type,
+      #vhostuser_socket_dir       => $ovs_vhostuser_socket_dir,
+      #extensions                 => $extensions,
+      #manage_vswitch             => false,
       manage_service             => true,
       enabled                    => true,
     }
+
+# TODO(Xarses): This needs to be removed when https://bugs.launchpad.net/mos/+bug/1537941
+  # is resolved.
+  exec { 'kilo-neutron-plugin':
+    command => 'ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini',
+    path    => '/bin:/sbin:/usr/bin:/usr/sbin',
+    unless  => 'test -f /etc/neutron/plugin.ini',
+    require => Package[$::neutron::params::ovs_agent_package],
+  } ~> Service[$::neutron::params::ovs_agent_service]
 
     if $node_name in keys($neutron_nodes) {
       if $neutron_server_enable {
@@ -180,6 +216,6 @@ class openstack_tasks::openstack_network::plugins::ml2 {
       ensure => 'installed',
     }
 
-  }
+    #  }
 
 }

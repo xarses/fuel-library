@@ -9,15 +9,15 @@ class osnailyfacter::generate_vms::generate_vms {
     $libvirt_dir = '/etc/libvirt/qemu'
     $template_dir = '/var/lib/nova'
     $packages = ['qemu-utils', 'qemu-kvm', 'libvirt-bin', 'xmlstarlet']
+    $libvirt_service_name = 'libvirtd'
 
 
-    include ::nova::params
 
     package { $packages:
       ensure => 'installed',
     }
 
-    service { $::nova::params::libvirt_service_name:
+    service { $libvirt_service_name:
       ensure  => 'running',
       require => Package[$packages],
       before  => Exec['generate_vms'],

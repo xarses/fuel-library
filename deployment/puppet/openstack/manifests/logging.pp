@@ -260,10 +260,6 @@ class openstack::logging (
       content => template("${module_name}/51-ceilometer.conf.erb"),
     }
 
-    ::rsyslog::snippet { '53-aodh':
-      content => template("${module_name}/53-aodh.conf.erb"),
-    }
-
     ::rsyslog::snippet { '55-murano':
       content => template("${module_name}/55-murano.conf.erb"),
     }

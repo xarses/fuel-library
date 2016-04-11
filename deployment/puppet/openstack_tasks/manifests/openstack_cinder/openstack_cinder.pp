@@ -129,14 +129,17 @@ class openstack_tasks::openstack_cinder::openstack_cinder {
   $keymgr_encryption_auth_url = "${identity_uri}/v3"
 
   class { '::cinder':
-    rpc_backend              => $rpc_backend,
+    # REBASE. Module cinder in kilo doesnt understand rpc_backend rabbitmq or rabbit, we should pass rpc_backend=cinder.openstack.common.rpc.impl_kombu.
+    # Default value works well. // vn637v
+    #  rpc_backend              => $rpc_backend,
+
     rabbit_hosts             => split(hiera('amqp_hosts',''), ','),
     rabbit_userid            => $rabbit_hash['user'],
     rabbit_password          => $rabbit_hash['password'],
     database_connection      => $db_connection,
     verbose                  => $verbose,
     use_syslog               => $use_syslog,
-    use_stderr               => $use_stderr,
+    #    use_stderr               => $use_stderr,
     log_facility             => hiera('syslog_log_facility_cinder', 'LOG_LOCAL3'),
     debug                    => $debug,
     database_idle_timeout    => $idle_timeout,
@@ -144,9 +147,9 @@ class openstack_tasks::openstack_cinder::openstack_cinder {
     database_max_retries     => $max_retries,
     database_max_overflow    => $max_overflow,
     control_exchange         => 'cinder',
-    rabbit_ha_queues         => true,
-    report_interval          => $cinder_hash['cinder_report_interval'],
-    service_down_time        => $cinder_hash['cinder_service_down_time'],
+    #rabbit_ha_queues         => true,
+    #report_interval          => $cinder_hash['cinder_report_interval'],
+    #service_down_time        => $cinder_hash['cinder_service_down_time'],
   }
 
   if ($bind_host) {
@@ -160,12 +163,12 @@ class openstack_tasks::openstack_cinder::openstack_cinder {
       bind_host                    => $bind_host,
       ratelimits                   => hiera('cinder_rate_limits'),
       service_workers              => $service_workers,
-      privileged_user              => true,
-      os_privileged_user_password  => $cinder_user_password,
-      os_privileged_user_tenant    => $keystone_tenant,
-      os_privileged_user_auth_url  => $privileged_auth_uri,
-      os_privileged_user_name      => $keystone_user,
-      keymgr_encryption_auth_url   => $keymgr_encryption_auth_url,
+      #      privileged_user              => true,
+      #      os_privileged_user_password  => $cinder_user_password,
+      #      os_privileged_user_tenant    => $keystone_tenant,
+      #      os_privileged_user_auth_url  => $privileged_auth_uri,
+      #      os_privileged_user_name      => $keystone_user,
+      #      keymgr_encryption_auth_url   => $keymgr_encryption_auth_url,
       nova_catalog_admin_info      => 'compute:nova:adminURL',
       nova_catalog_info            => 'compute:nova:internalURL',
       sync_db                      => $primary_controller,
@@ -233,7 +236,7 @@ class openstack_tasks::openstack_cinder::openstack_cinder {
 
         class { 'cinder::backup::swift':
           backup_swift_url      => "${swift_url}/v1/AUTH_",
-          backup_swift_auth_url => "${auth_uri}/v2.0",
+          #backup_swift_auth_url => "${auth_uri}/v2.0",
         }
       }
       'ceph': {

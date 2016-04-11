@@ -98,7 +98,8 @@ class openstack_tasks::keystone::keystone {
   $admin_url    = "${admin_protocol}://${admin_address}:${admin_port}"
   $internal_url = "${internal_protocol}://${internal_address}:${internal_port}"
 
-  $auth_suffix  = pick($keystone_hash['auth_suffix'], '/')
+  #9-Kilo hack, keystone client requires /v2.0
+  $auth_suffix  = pick($keystone_hash['auth_suffix'], '/v2.0')
   $auth_url     = "${internal_url}${auth_suffix}"
 
   $enabled = true
@@ -151,8 +152,8 @@ class openstack_tasks::keystone::keystone {
     threads               => 3,
     workers               => min($::processorcount, 6),
     ssl                   => $ssl,
-    vhost_custom_fragment => $vhost_limit_request_field_size,
-    access_log_format     => '%{X-Forwarded-For}i %l %u %t \"%r\" %>s %b %D \"%{Referer}i\" \"%{User-Agent}i\"',
+    #vhost_custom_fragment => $vhost_limit_request_field_size,
+    #access_log_format     => '%{X-Forwarded-For}i %l %u %t \"%r\" %>s %b %D \"%{Referer}i\" \"%{User-Agent}i\"',
 
     # ports and host should be set for ip_based vhost
     public_port           => $public_port,
@@ -282,22 +283,17 @@ class openstack_tasks::keystone::keystone {
 
   if $enabled {
     class { '::keystone':
-      enable_bootstrap             => true,
       verbose                      => $verbose,
       debug                        => $debug,
       catalog_type                 => 'sql',
       admin_token                  => $admin_token,
       enabled                      => false,
       database_connection          => $db_connection,
-      database_max_retries         => $max_retries,
-      database_max_pool_size       => $max_pool_size,
-      database_max_overflow        => $max_overflow,
       public_bind_host             => $local_address_for_bind,
       admin_bind_host              => $local_address_for_bind,
       admin_workers                => $service_workers,
       public_workers               => $service_workers,
       use_syslog                   => $use_syslog,
-      use_stderr                   => $use_stderr,
       database_idle_timeout        => $database_idle_timeout,
       sync_db                      => $primary_controller,
       rabbit_password              => $rabbit_password,
@@ -311,12 +307,6 @@ class openstack_tasks::keystone::keystone {
       cache_backend                => $cache_backend,
       revoke_driver                => $revoke_driver,
       admin_endpoint               => $admin_url,
-      memcache_dead_retry          => '60',
-      memcache_socket_timeout      => '1',
-      memcache_pool_maxsize        =>'1000',
-      memcache_pool_unused_timeout => '60',
-      cache_memcache_servers       => $memcache_servers,
-      policy_driver                => 'keystone.policy.backends.sql.Policy',
     }
 
     Package<| title == 'keystone'|> ~> Service<| title == 'keystone'|>

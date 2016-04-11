@@ -2,7 +2,8 @@
 
 class cluster::neutron::ovs (
   $primary        = false,
-  $plugin_config  = '/etc/neutron/plugins/ml2/openvswitch_agent.ini',
+  #$plugin_config  = '/etc/neutron/plugins/ml2/openvswitch_agent.ini',
+  $plugin_config  = '/etc/neutron/plugin.ini',
   ) {
 
   require cluster::neutron

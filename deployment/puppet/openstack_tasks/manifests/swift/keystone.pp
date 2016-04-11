@@ -46,8 +46,6 @@ class openstack_tasks::swift::keystone {
     password            => $password,
     auth_name           => $auth_name,
     configure_endpoint  => $configure_endpoint,
-    configure_user      => $configure_user,
-    configure_user_role => $configure_user_role,
     service_name        => $service_name,
     public_url          => $public_url,
     internal_url        => $internal_url,

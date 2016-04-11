@@ -47,7 +47,7 @@ class openstack_tasks::horizon::horizon {
   $internal_auth_protocol = get_ssl_property($ssl_hash, {}, 'keystone', 'internal', 'protocol', 'http')
   $internal_auth_address  = get_ssl_property($ssl_hash, {}, 'keystone', 'internal', 'hostname', [$service_endpoint, $management_vip])
   $internal_auth_port     = '5000'
-  $keystone_api           = 'v3'
+  $keystone_api           = 'v2.0'
   $keystone_url           = "${internal_auth_protocol}://${internal_auth_address}:${internal_auth_port}/${keystone_api}"
 
   $cinder_options     = {'enable_backup' => pick($storage_hash['volumes_ceph'], false)}
@@ -90,12 +90,9 @@ class openstack_tasks::horizon::horizon {
     bind_address          => $bind_address,
     cache_server_ip       => $cache_server_ip,
     cache_server_port     => hiera('memcache_server_port', '11211'),
-    cache_backend         => $cache_backend,
-    cache_options         => {'SOCKET_TIMEOUT' => 1,'SERVER_RETRIES' => 1,'DEAD_RETRY' => 1},
     secret_key            => $secret_key,
     keystone_url          => $keystone_url,
     listen_ssl            => $use_ssl,
-    ssl_no_verify         => $ssl_no_verify,
     log_level             => $log_level,
     configure_apache      => false,
     django_session_engine => 'django.contrib.sessions.backends.cache',
@@ -103,12 +100,8 @@ class openstack_tasks::horizon::horizon {
     secure_cookies        => false,
     cinder_options        => $cinder_options,
     neutron_options       => $neutron_options,
-    custom_theme_path     => $custom_theme_path,
-    redirect_type         => 'temp', # LP#1385133
     hypervisor_options    => $hypervisor_options,
-    overview_days_range   => $overview_days_range,
     file_upload_temp_dir  => $file_upload_temp_dir,
-    api_versions          => {'identity' => 3},
   }
 
   # Always run collectstatic&compress for MOS/UCA packages
@@ -167,5 +160,20 @@ class openstack_tasks::horizon::horizon {
   if $::os_package_type == 'rpm' {
     Exec['refresh_horizon_django_cache'] ~> Exec['chown_dashboard']
   }
+
+#### REBASE_START Clarify with Abdrey Bubyr the purpose of this fix
+# TODO(aschultz): remove this if openstack-dashboard stops installing
+# openstack-dashboard-apache
+if $::osfamily == 'Debian' {
+  # LP#1513252 - remove this package if it's installed by the
+  # openstack-dashboard package installation.
+  package { 'openstack-dashboard-apache':
+    ensure  => 'absent',
+    require => Package['openstack-dashboard']
+  } ~> Service[$::apache::params::service_name]
+}
+
+include ::tweaks::apache_wrappers
+#### REBASE_END
 
 }

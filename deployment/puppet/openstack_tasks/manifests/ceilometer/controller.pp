@@ -119,7 +119,7 @@ class openstack_tasks::ceilometer::controller {
       http_timeout               => $ceilometer_hash['http_timeout'],
       event_time_to_live         => $ceilometer_hash['event_time_to_live'],
       metering_time_to_live      => $ceilometer_hash['metering_time_to_live'],
-      alarm_history_time_to_live => $ceilometer_hash['alarm_history_time_to_live'],
+      #      alarm_history_time_to_live => $ceilometer_hash['alarm_history_time_to_live'],
       rabbit_hosts               => split(hiera('amqp_hosts',''), ','),
       rabbit_userid              => $amqp_user,
       rabbit_password            => $amqp_password,
@@ -159,14 +159,14 @@ class openstack_tasks::ceilometer::controller {
     # Install the ceilometer-api service
     # The keystone_password parameter is mandatory
     class { '::ceilometer::api':
-      auth_uri          => $keystone_auth_uri,
-      identity_uri      => $keystone_identity_uri,
+      keystone_auth_uri          => $keystone_auth_uri,
+      keystone_identity_uri      => $keystone_identity_uri,
       keystone_user     => $ceilometer_hash['user'],
       keystone_password => $ceilometer_hash['user_password'],
       keystone_tenant   => $ceilometer_hash['tenant'],
       host              => $api_bind_address,
       port              => '8777',
-      api_workers       => $service_workers,
+      #api_workers       => $service_workers,
     }
 
     # Clean up expired data once a week
@@ -179,11 +179,18 @@ class openstack_tasks::ceilometer::controller {
     }
 
     class { '::ceilometer::collector':
-      collector_workers => $service_workers,
+      #collector_workers => $service_workers,
     }
 
+    class { '::ceilometer::alarm::evaluator':
+      evaluation_interval => 60,
+    }
+
+    class { '::ceilometer::alarm::notifier': }
+
+
     class { '::ceilometer::agent::notification':
-      notification_workers => $service_workers,
+      #notification_workers => $service_workers,
       store_events         => true,
     }
 
@@ -209,6 +216,11 @@ class openstack_tasks::ceilometer::controller {
         'DEFAULT/use_syslog_rfc_format': value => true;
       }
     }
+
+  Package<| title == $::ceilometer::params::alarm_package or
+    title == 'ceilometer-common'|> ~>
+  Service<| title == 'ceilometer-alarm-evaluator'|>
+
 
     # TODO (iberezovskiy): remove this workaround in N when ceilometer module
     # will be switched to puppet-oslo usage for rabbit configuration

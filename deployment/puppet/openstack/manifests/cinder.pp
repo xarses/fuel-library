@@ -118,7 +118,7 @@ class openstack::cinder(
         database_connection    => $sql_connection,
         verbose                => $verbose,
         use_syslog             => $use_syslog,
-        use_stderr             => $use_stderr,
+        #use_stderr             => $use_stderr,
         log_facility           => $syslog_log_facility,
         debug                  => $debug,
         database_idle_timeout  => $idle_timeout,
@@ -126,7 +126,6 @@ class openstack::cinder(
         database_max_retries   => $max_retries,
         database_max_overflow  => $max_overflow,
         control_exchange       => 'cinder',
-        rabbit_ha_queues       => $rabbit_ha_queues,
       }
     }
     'qpid': {
@@ -152,12 +151,12 @@ class openstack::cinder(
       bind_host                    => $bind_host,
       ratelimits                   => $cinder_rate_limits,
       service_workers              => $service_workers,
-      privileged_user              => true,
-      os_privileged_user_password  => $cinder_user_password,
-      os_privileged_user_tenant    => $keystone_tenant,
-      os_privileged_user_auth_url  => $privileged_auth_uri,
-      os_privileged_user_name      => $keystone_user,
-      keymgr_encryption_auth_url   => $keymgr_encryption_auth_url,
+      #privileged_user              => true,
+      #os_privileged_user_password  => $cinder_user_password,
+      #os_privileged_user_tenant    => $keystone_tenant,
+      #os_privileged_user_auth_url  => $privileged_auth_uri,
+      #os_privileged_user_name      => $keystone_user,
+      #keymgr_encryption_auth_url   => $keymgr_encryption_auth_url,
       nova_catalog_admin_info      => 'compute:nova:adminURL',
       nova_catalog_info            => 'compute:nova:internalURL',
       sync_db                      => $primary_controller,
@@ -220,7 +219,7 @@ class openstack::cinder(
 
         class { 'cinder::backup::swift':
           backup_swift_url      => "${swift_url}/v1/AUTH_",
-          backup_swift_auth_url => "${auth_uri}/v2.0",
+          #backup_swift_auth_url => "${auth_uri}/v2.0",
         }
       }
       'ceph': {

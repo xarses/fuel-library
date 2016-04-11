@@ -26,7 +26,7 @@ class openstack_tasks::glance::keystone {
   $ssl_hash                  = hiera_hash('use_ssl', {})
 
   Class['::osnailyfacter::wait_for_keystone_backends'] -> Class['::glance::keystone::auth']
-  Class['::osnailyfacter::wait_for_keystone_backends'] -> Class['::glance::keystone::glare_auth']
+  #Class['::osnailyfacter::wait_for_keystone_backends'] -> Class['::glance::keystone::glare_auth']
 
   $public_protocol     = get_ssl_property($ssl_hash, $public_ssl_hash, 'glance', 'public', 'protocol', 'http')
   $public_address      = get_ssl_property($ssl_hash, $public_ssl_hash, 'glance', 'public', 'hostname', [$public_vip])
@@ -69,18 +69,18 @@ class openstack_tasks::glance::keystone {
     tenant              => $tenant,
   }
 
-  class { '::glance::keystone::glare_auth':
-    password            => $glare_password,
-    auth_name           => $glare_auth_name,
-    configure_endpoint  => $glare_configure_endpoint,
-    configure_user      => $glare_configure_user,
-    configure_user_role => $glare_configure_user_role,
-    service_name        => $glare_service_name,
-    public_url          => $glare_public_url,
-    internal_url        => $glare_internal_url,
-    admin_url           => $glare_admin_url,
-    region              => $glare_region,
-    tenant              => $glare_tenant,
-  }
+  #  class { '::glance::keystone::glare_auth':
+  #    password            => $glare_password,
+  #    auth_name           => $glare_auth_name,
+  #    configure_endpoint  => $glare_configure_endpoint,
+  #    configure_user      => $glare_configure_user,
+  #    configure_user_role => $glare_configure_user_role,
+  #    service_name        => $glare_service_name,
+  #    public_url          => $glare_public_url,
+  #    internal_url        => $glare_internal_url,
+  #    admin_url           => $glare_admin_url,
+  #    region              => $glare_region,
+  #    tenant              => $glare_tenant,
+  #  }
 
 }

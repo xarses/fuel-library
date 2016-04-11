@@ -2,9 +2,7 @@ class openstack_tasks::openstack_network::server_config {
 
   notice('MODULAR: openstack_network/server_config.pp')
 
-  $use_neutron = hiera('use_neutron', false)
 
-  if $use_neutron {
     # override neutron options
     $override_configuration = hiera_hash('configuration', {})
     override_resources { 'neutron_api_config':
@@ -16,9 +14,7 @@ class openstack_tasks::openstack_network::server_config {
     override_resources { 'neutron_plugin_ml2':
       data => $override_configuration['neutron_plugin_ml2']
     } ~> Service['neutron-server']
-  }
 
-  if $use_neutron {
 
     $neutron_config          = hiera_hash('neutron_config')
     $neutron_server_enable   = pick($neutron_config['neutron_server_enable'], true)
@@ -81,9 +77,10 @@ class openstack_tasks::openstack_network::server_config {
     $nova_internal_endpoint  = get_ssl_property($ssl_hash, {}, 'nova', 'internal', 'hostname', [$nova_endpoint])
 
     $auth_api_version        = 'v2.0'
-    $auth_uri                = "${internal_auth_protocol}://${internal_auth_endpoint}:5000/"
-    $auth_url                = "${internal_auth_protocol}://${internal_auth_endpoint}:35357/"
-    $nova_admin_auth_url     = "${admin_auth_protocol}://${admin_auth_endpoint}:35357/"
+    #$auth_uri                = "${internal_auth_protocol}://${internal_auth_endpoint}:5000/"
+    #$auth_url                = "${internal_auth_protocol}://${internal_auth_endpoint}:35357/"
+    $identity_uri            = "${internal_auth_protocol}://${internal_auth_endpoint}:5000/"
+    $nova_admin_auth_url     = "${admin_auth_protocol}://${admin_auth_endpoint}:35357/v2.0"
     $nova_url                = "${nova_internal_protocol}://${nova_internal_endpoint}:8774/v2"
 
     $workers_max             = hiera('workers_max', 16)
@@ -183,24 +180,29 @@ class openstack_tasks::openstack_network::server_config {
       tunnel_id_ranges          => $tunnel_id_ranges,
       vxlan_group               => $vxlan_group,
       vni_ranges                => $tunnel_id_ranges,
-      physical_network_mtus     => $physical_network_mtus,
+      physnet_mtus              => $physical_network_mtus,
       path_mtu                  => $physical_net_mtu,
-      extension_drivers         => $extension_drivers,
+      #extension_drivers         => $extension_drivers,
       supported_pci_vendor_devs => $pci_vendor_devs,
       sriov_agent_required      => $use_sriov,
       enable_security_group     => true,
-      firewall_driver           => 'neutron.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver',
     }
 
     class { '::neutron::server':
       sync_db                          => $primary_controller,
 
-      username                         => $username,
-      password                         => $password,
-      project_name                     => $project_name,
-      region_name                      => $region_name,
-      auth_url                         => $auth_url,
-      auth_uri                         => $auth_uri,
+    #  username                         => $username,
+    #  password                         => $password,
+    #  project_name                     => $project_name,
+    #  region_name                      => $region_name,
+    #  auth_url                         => $auth_url,
+    #  auth_uri                         => $auth_uri,
+    auth_user                        => $username,
+    auth_password                    => $password,
+    auth_tenant                      => $project_name,
+    auth_region                      => $region_name,
+    identity_uri                     => $identity_uri,
+    auth_uri                         => $identity_uri,
 
       database_connection              => $db_connection,
       database_max_retries             => hiera('max_retries'),
@@ -219,12 +221,27 @@ class openstack_tasks::openstack_network::server_config {
       rpc_workers                      => $service_workers,
 
       router_distributed               => $dvr,
-      qos_notification_drivers         => $qos_notification_drivers,
+      #qos_notification_drivers         => $qos_notification_drivers,
       enabled                          => true,
       manage_service                   => true,
     }
 
-    include ::neutron::params
+  # TODO(sv): This needs to be removed when https://bugs.launchpad.net/mos/+bug/1537941
+  # is resolved.
+  exec { 'kilo-neutron-plugin-ini':
+    command => 'ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini',
+    path    => '/bin:/sbin:/usr/bin:/usr/sbin',
+    unless  => 'test -f /etc/neutron/plugin.ini',
+  }
+  if ($::neutron::params::server_package) {
+    Package['neutron-server'] -> Exec['kilo-neutron-plugin-ini']
+  } else {
+    Package['neutron'] -> Exec['kilo-neutron-plugin-ini']
+  }
+  Exec['kilo-neutron-plugin-ini'] -> Exec<| title == 'neutron-db-sync'|>
+  Exec['kilo-neutron-plugin-ini'] -> Service['neutron-server']
+
+
     tweaks::ubuntu_service_override { $::neutron::params::server_service:
       package_name => $neutron::params::server_package ? {
         false   => $neutron::params::package_name,
@@ -232,14 +249,15 @@ class openstack_tasks::openstack_network::server_config {
       }
     }
 
-    class { '::neutron::server::notifications':
-      nova_url     => $nova_url,
-      auth_url     => $nova_admin_auth_url,
-      username     => $nova_auth_user,
-      project_name => $nova_auth_tenant,
-      password     => $nova_auth_password,
-      region_name  => $region_name,
-    }
+
+  class { 'neutron::server::notifications':
+    nova_url                => $nova_url,
+    nova_admin_auth_url     => $nova_admin_auth_url,
+    nova_admin_username     => $nova_auth_user,
+    nova_admin_tenant_name  => $nova_auth_tenant,
+    nova_admin_password     => $nova_auth_password,
+    nova_region_name        => $auth_region,
+  }
 
     # Stub for Nuetron package
     package { 'neutron':
@@ -247,6 +265,5 @@ class openstack_tasks::openstack_network::server_config {
       ensure => 'installed',
     }
 
-  }
 
 }

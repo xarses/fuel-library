@@ -33,13 +33,14 @@ class fuel::keystone (
   class { '::keystone':
     # (TODO iberezovskiy): Set 'enable_bootstrap' to true when MOS packages will
     # be updated and 'keystone-manage bootstrap' command will be available
-    enable_bootstrap     => false,
+    #enable_bootstrap     => false,
     admin_token          => $admin_token,
     catalog_type         => 'sql',
     database_connection  => "${db_engine}://${db_user}:${db_password}@${db_host}:${db_port}/${db_name}",
     token_expiration     => 86400,
     token_provider       => 'keystone.token.providers.uuid.Provider',
     default_domain       => $keystone_domain,
+    paste_config         => '/etc/keystone/keystone-paste.ini',
   }
 
   # FIXME(kozhukalov): Remove this hack and use enable_bootstrap instead
@@ -87,15 +88,15 @@ class fuel::keystone (
     password        => $admin_password,
     enabled         => 'True',
     replace_password => false,
-    domain          => $keystone_domain,
+    #domain          => $keystone_domain,
   }
 
   # assigning role 'admin' to user 'admin' in tenant 'admin'
   keystone_user_role { "${admin_user}@admin":
     ensure         => present,
     roles          => ['admin'],
-    user_domain    => $keystone_domain,
-    project_domain => $keystone_domain,
+#    user_domain    => $keystone_domain,
+#    project_domain => $keystone_domain,
   }
 
   # Monitord user
@@ -110,8 +111,8 @@ class fuel::keystone (
   keystone_user_role { "${monitord_user}@services":
     ensure         => present,
     roles          => ['monitoring'],
-    user_domain    => $keystone_domain,
-    project_domain => $keystone_domain,
+#    user_domain    => $keystone_domain,
+#    project_domain => $keystone_domain,
   }
 
   # Keystone Endpoint

@@ -211,6 +211,19 @@ class openstack_tasks::roles::compute {
   default: { fail("Unsupported osfamily: ${::osfamily}") }
   }
 
+
+  $host_uuid = hiera('host_uuid', generate('/bin/sh', '-c', 'uuidgen'))
+
+  augeas { 'libvirt-conf-uuid':
+    context => '/files/etc/libvirt/libvirtd.conf',
+    changes => [
+      "set host_uuid $host_uuid",
+    ],
+    onlyif  => "match /files/etc/libvirt/libvirtd.conf/host_uuid size == 0",
+    notify  => Service['libvirt'],
+  }
+
+
   if $::osfamily == 'Debian' {
     if $use_huge_pages {
       if $use_1g_huge_pages {
@@ -305,7 +318,7 @@ class openstack_tasks::roles::compute {
     verbose                => $verbose,
     debug                  => $debug,
     use_syslog             => $use_syslog,
-    use_stderr             => $use_stderr,
+    #use_stderr             => $use_stderr,
     log_facility           => $syslog_log_facility,
     state_path             => $nova_hash_real['state_path'],
     report_interval        => $nova_report_interval,
@@ -313,12 +326,7 @@ class openstack_tasks::roles::compute {
     notify_on_state_change => $notify_on_state_change,
     notification_driver    => $ceilometer_hash['notification_driver'],
     memcached_servers      => $memcached_addresses,
-    cinder_catalog_info    => pick($nova_hash_real['cinder_catalog_info'], 'volumev2:cinderv2:internalURL'),
-  }
-
-  class { '::nova::availability_zone':
-    default_availability_zone => $nova_hash_real['default_availability_zone'],
-    default_schedule_zone     => $nova_hash_real['default_schedule_zone'],
+    #cinder_catalog_info    => pick($nova_hash_real['cinder_catalog_info'], 'volumev2:cinderv2:internalURL'),
   }
 
   if str2bool($::is_virtual) {
@@ -366,9 +374,11 @@ class openstack_tasks::roles::compute {
     instance_usage_audit          => $instance_usage_audit,
     instance_usage_audit_period   => $instance_usage_audit_period,
     reserved_host_memory          => $nova_hash_real['reserved_host_memory'],
-    config_drive_format           => $config_drive_format,
-    allow_resize_to_same_host     => true,
-    vcpu_pin_set                  => $nova_hash_real['cpu_pinning'],
+    default_availability_zone     => $nova_hash['default_availability_zone'],
+    default_schedule_zone         => $nova_hash['default_schedule_zone'],
+    #config_drive_format           => $config_drive_format,
+    #allow_resize_to_same_host     => true,
+    #vcpu_pin_set                  => $nova_hash_real['cpu_pinning'],
   }
 
   nova_config {
@@ -376,6 +386,19 @@ class openstack_tasks::roles::compute {
     'libvirt/block_migration_flag': value => 'VIR_MIGRATE_UNDEFINE_SOURCE,VIR_MIGRATE_PEER2PEER,VIR_MIGRATE_LIVE,VIR_MIGRATE_NON_SHARED_INC';
     'DEFAULT/connection_type':      value => 'libvirt';
   }
+
+  # (abubyr) Backport setting VCPU pinning for Nova as Kilo version of puppet module
+  # 'nova' does not support this setting
+  # nova.conf option 'vcpu_pin_set_str' cannot be empty or false, None etc.
+  # Such values prevent nova-compute service to run correctly
+  # Option should be commented out (unset) or set like this: "4-12,^8,15"
+  $vcpu_pin_set_str = join(any2array($vcpu_pin_set), ',')
+  if !empty($vcpu_pin_set_str) {
+    nova_config {
+      'DEFAULT/vcpu_pin_set':         value => $vcpu_pin_set_str;
+    }
+  }
+
 
   if $use_syslog {
     nova_config {
@@ -406,6 +429,19 @@ class openstack_tasks::roles::compute {
     $disk_cachemodes = ['"file=directsync,block=none"']
   }
 
+
+  # TODO(aschultz): Just use $::nova::params::libvirt_service_name when a
+  # version of puppet-nova has been pulled in that uses os_package_type to
+  # correctly handle the service names for ubuntu vs debian. Upstream bug
+  # LP#1515076
+  # NOTE: for debian packages and centos the name is the same ('libvirtd') so
+  # we are defaulting to that for backwards compatibility. LP#1469308
+  $libvirt_service_name = $::os_package_type ? {
+    'ubuntu' => $::nova::params::libvirt_service_name,
+    default  => 'libvirtd'
+  }
+
+
   # Configure libvirt for nova-compute
   class { '::nova::compute::libvirt':
     libvirt_virt_type                          => $libvirt_type,
@@ -414,11 +450,10 @@ class openstack_tasks::roles::compute {
     libvirt_inject_partition                   => $libvirt_inject_partition,
     vncserver_listen                           => '0.0.0.0',
     remove_unused_original_minimum_age_seconds => pick($nova_hash_real['remove_unused_original_minimum_age_seconds'], '86400'),
-    libvirt_service_name                       => $::nova::params::libvirt_service_name,
+    libvirt_service_name                       => $libvirt_service_name,
   }
 
   class { '::nova::migration::libvirt':
-    override_uuid => true,
   }
 
   # From legacy libvirt.pp

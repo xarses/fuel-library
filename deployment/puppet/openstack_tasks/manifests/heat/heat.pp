@@ -26,7 +26,7 @@ class openstack_tasks::heat::heat {
   $admin_auth_address       = get_ssl_property($ssl_hash, {}, 'keystone', 'admin', 'hostname', [$keystone_host, $management_vip])
 
   $heat_protocol            = get_ssl_property($ssl_hash, {}, 'heat', 'public', 'protocol', 'http')
-  $heat_endpoint            = get_ssl_property($ssl_hash, {}, 'heat', 'public', 'hostname', [hiera('heat_endpoint', ''), $public_vip])
+  $heat_endpoint            = get_ssl_property($ssl_hash, {}, 'heat', 'internal', 'hostname', [hiera('heat_endpoint', ''), $management_vip])
   $public_ssl               = get_ssl_property($ssl_hash, {}, 'heat', 'public', 'usage', false)
 
   $auth_uri                 = "${public_auth_protocol}://${public_auth_address}:5000/v2.0/"
@@ -150,7 +150,7 @@ class openstack_tasks::heat::heat {
     domain_admin       => 'heat_admin',
     domain_password    => $heat_hash['user_password'],
     domain_admin_email => 'heat_admin@localhost',
-    manage_domain      => true,
+    #manage_domain      => true,
   }
 
   Class['::heat'] ->
@@ -201,8 +201,8 @@ class openstack_tasks::heat::heat {
     database_idle_timeout  => $idle_timeout,
     sync_db                => $primary_controller,
 
-    rpc_backend            => 'rabbit',
-    rpc_response_timeout   => '600',
+    rpc_backend            => 'heat.openstack.common.rpc.impl_kombu',
+    #rpc_response_timeout   => '600',
     rabbit_hosts           => split(hiera('amqp_hosts',''), ','),
     rabbit_userid          => $rabbit_hash['user'],
     rabbit_password        => $rabbit_hash['password'],
@@ -211,16 +211,16 @@ class openstack_tasks::heat::heat {
     verbose                => $verbose,
     debug                  => $debug,
     use_syslog             => $use_syslog,
-    use_stderr             => $use_stderr,
+    #use_stderr             => $use_stderr,
     log_facility           => $syslog_log_facility,
 
-    max_template_size      => '5440000',
-    max_json_body_size     => '10880000',
-    notification_driver    => 'heat.openstack.common.notifier.rpc_notifier',
+    #max_template_size      => '5440000',
+    #max_json_body_size     => '10880000',
+    #notification_driver    => 'heat.openstack.common.notifier.rpc_notifier',
 
-    database_max_pool_size => $max_pool_size,
-    database_max_overflow  => $max_overflow,
-    database_max_retries   => $max_retries,
+    #database_max_pool_size => $max_pool_size,
+    #database_max_overflow  => $max_overflow,
+    #database_max_retries   => $max_retries,
   }
 
   # Engine
@@ -233,9 +233,9 @@ class openstack_tasks::heat::heat {
     # please coment which to use
     # https://github.com/openstack/puppet-heat/blob/master/manifests/engine.pp#L105
     trusts_delegated_roles                          => [],
-    max_resources_per_stack                         => '20000',
-    instance_connection_https_validate_certificates => '1',
-    instance_connection_is_secure                   => '0',
+    #max_resources_per_stack                         => '20000',
+    #instance_connection_https_validate_certificates => '1',
+    #instance_connection_is_secure                   => '0',
   }
 
   if hiera('heat_ha_engine', true){

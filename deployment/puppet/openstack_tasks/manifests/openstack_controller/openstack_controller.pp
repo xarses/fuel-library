@@ -36,6 +36,7 @@ class openstack_tasks::openstack_controller::openstack_controller {
   $ssl_hash                     = hiera_hash('use_ssl', {})
   $node_hash                    = hiera_hash('node_hash', {})
   $sahara_enabled               = pick($sahara_hash['enabled'], false)
+  $ceilometer_hash              = hiera_hash('ceilometer', {})
   $kombu_compression            = hiera('kombu_compression', '')
 
   $internal_auth_protocol = get_ssl_property($ssl_hash, {}, 'keystone', 'internal', 'protocol', [$nova_hash['auth_protocol'], 'http'])
@@ -161,11 +162,22 @@ class openstack_tasks::openstack_controller::openstack_controller {
   $memcached_addresses =  suffix($memcached_server, inline_template(":<%= @memcached_port %>"))
 
   # we can't use pick for this because pick blows up on []
-  if $nova_hash['notification_driver'] {
-    $nova_notification_driver = $nova_hash['notification_driver']
+# (abubyr) Fix notification options specification in controller's nova.conf
+# This will allow to pass compute.instance.update events from Nova to Ceilometer
+# 1) nova_hash does not contain key 'notification_driver' so we switched to 'ceilometer' hash
+# 2) option notify_on_state_change was previously not specified at all
+if $ceilometer_hash['enabled'] {
+  if $ceilometer_hash['notification_driver'] {
+    $nova_notification_driver = $ceilometer_hash['notification_driver']
   } else {
     $nova_notification_driver = []
   }
+  $nova_notify_on_state_change = 'vm_and_task_state'
+} else {
+    $nova_notification_driver = []
+    $nova_notify_on_state_change = undef
+}
+
 
   # FIXME(bogdando) replace queue_provider for rpc_backend once all modules synced with upstream
   $rpc_backend   = 'nova.openstack.common.rpc.impl_kombu'
@@ -185,7 +197,7 @@ class openstack_tasks::openstack_controller::openstack_controller {
   class { '::nova':
     install_utilities       => false,
     database_connection     => $db_connection,
-    api_database_connection => $api_db_connection,
+    #api_database_connection => $api_db_connection,
     rpc_backend             => $rpc_backend,
     #FIXME(bogdando) we have to split amqp_hosts until all modules synced
     rabbit_hosts            => split($amqp_hosts, ','),
@@ -197,17 +209,19 @@ class openstack_tasks::openstack_controller::openstack_controller {
     debug                   => $debug,
     log_facility            => $syslog_log_facility_nova,
     use_syslog              => $use_syslog,
-    use_stderr              => $use_stderr,
+    #use_stderr              => $use_stderr,
     database_idle_timeout   => $idle_timeout,
     report_interval         => $nova_report_interval,
     service_down_time       => $nova_service_down_time,
     notify_api_faults       => pick($nova_hash['notify_api_faults'], false),
     notification_driver     => $nova_notification_driver,
+    notify_on_state_change  => $nova_notify_on_state_change,
+
     memcached_servers       => $memcached_addresses,
-    cinder_catalog_info     => pick($nova_hash['cinder_catalog_info'], 'volumev2:cinderv2:internalURL'),
-    database_max_pool_size  => $max_pool_size,
-    database_max_retries    => $max_retries,
-    database_max_overflow   => $max_overflow,
+    #cinder_catalog_info     => pick($nova_hash['cinder_catalog_info'], 'volumev2:cinderv2:internalURL'),
+    #database_max_pool_size  => $max_pool_size,
+    #database_max_retries    => $max_retries,
+    #database_max_overflow   => $max_overflow,
   }
 
   # TODO(aschultz): this is being removed in M, do we need it?
@@ -230,8 +244,8 @@ class openstack_tasks::openstack_controller::openstack_controller {
     quota_security_groups             => pick($nova_hash['quota_security_groups'], 10),
     quota_security_group_rules        => pick($nova_hash['quota_security_group_rules'], 20),
     quota_key_pairs                   => pick($nova_hash['quota_key_pairs'], 10),
-    quota_server_groups               => pick($nova_hash['quota_server_groups'], 10),
-    quota_server_group_members        => pick($nova_hash['quota_server_group_members'], 10),
+    #quota_server_groups               => pick($nova_hash['quota_server_groups'], 10),
+    #quota_server_group_members        => pick($nova_hash['quota_server_group_members'], 10),
     reservation_expire                => pick($nova_hash['reservation_expire'], 86400),
     until_refresh                     => pick($nova_hash['until_refresh'], 0),
     max_age                           => pick($nova_hash['max_age'], 0),
@@ -272,10 +286,10 @@ class openstack_tasks::openstack_controller::openstack_controller {
     neutron_metadata_proxy_shared_secret => $neutron_metadata_proxy_secret,
     osapi_compute_workers                => $service_workers,
     sync_db                              => $primary_controller,
-    sync_db_api                          => $primary_controller,
-    fping_path                           => $fping_path,
-    api_paste_config                     => '/etc/nova/api-paste.ini',
-    default_floating_pool                => $default_floating_net,
+    #sync_db_api                          => $primary_controller,
+    #fping_path                           => $fping_path,
+    #api_paste_config                     => '/etc/nova/api-paste.ini',
+    #default_floating_pool                => $default_floating_net,
     require                              => Package['nova-common'],
   }
 
@@ -301,7 +315,7 @@ class openstack_tasks::openstack_controller::openstack_controller {
   class { '::nova::conductor':
     enabled   => true,
     workers   => $service_workers,
-    use_local => pick($nova_hash['use_local'], false),
+    #use_local => pick($nova_hash['use_local'], false),
   }
 
   # a bunch of nova services that require no configuration
@@ -317,6 +331,18 @@ class openstack_tasks::openstack_controller::openstack_controller {
     enabled => true,
     host    => $api_bind_address,
   }
+
+# TODO(aschultz): when the openstacklib & nova modules have been updated
+# with a version that supports os_package_type, remove this block
+# See LP#1530912
+if !$::os_package_type or $::os_package_type == 'debian' {
+  $nova_vncproxy_package = 'nova-consoleproxy'
+  Package<| title == 'nova-vncproxy' |> {
+    name => 'nova-consoleproxy'
+  }
+} else {
+  $nova_vncproxy_package = 'nova-vncproxy'
+}
 
   ####### Disable upstart startup on install #######
   if($::operatingsystem == 'Ubuntu') {

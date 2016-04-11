@@ -175,15 +175,18 @@ class openstack_tasks::roles::cinder {
   }
 
   class { '::cinder':
-    rpc_backend            => $rpc_backend,
+    # REBASE. Module cinder in kilo doesnt understand rpc_backend rabbitmq or rabbit, we should pass
+    #rpc_backend=cinder.openstack.common.rpc.impl_kombu.
+    # Default value works well. // vn637v 
+    #rpc_backend            => $rpc_backend,
     rabbit_hosts           => split(hiera('amqp_hosts',''), ','),
     rabbit_userid          => $rabbit_hash['user'],
     rabbit_password        => $rabbit_hash['password'],
-    rabbit_ha_queues       => hiera('rabbit_ha_queues', false),
+    #rabbit_ha_queues       => hiera('rabbit_ha_queues', false),
     database_connection    => $db_connection,
     verbose                => $verbose,
     use_syslog             => $use_syslog,
-    use_stderr             => $use_stderr,
+    #use_stderr             => $use_stderr,
     log_facility           => hiera('syslog_log_facility_cinder', 'LOG_LOCAL3'),
     debug                  => $debug,
     database_idle_timeout  => $idle_timeout,
@@ -191,7 +194,6 @@ class openstack_tasks::roles::cinder {
     database_max_retries   => $max_retries,
     database_max_overflow  => $max_overflow,
     control_exchange       => 'cinder',
-    host                   => hiera('fqdn')
   }
 
   if $manage_volumes {
@@ -255,7 +257,7 @@ class openstack_tasks::roles::cinder {
 
         class { 'cinder::backup::swift':
           backup_swift_url      => "${swift_url}/v1/AUTH_",
-          backup_swift_auth_url => "${auth_uri}/v2.0",
+          #backup_swift_auth_url => "${auth_uri}/v2.0",
         }
       }
       'ceph': {

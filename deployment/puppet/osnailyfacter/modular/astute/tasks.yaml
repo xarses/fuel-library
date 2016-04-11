@@ -63,7 +63,7 @@
   requires: [upload_configuration]
   required_for: [pre_deployment_end]
   parameters:
-    cmd: ln -sf /etc/fuel/cluster/{CLUSTER_ID}/astute.yaml /etc/astute.yaml
+    cmd: "test -f /etc/fuel/cluster/{CLUSTER_ID}/astute.yaml && ln -sf /etc/fuel/cluster/{CLUSTER_ID}/astute.yaml /etc/astute.yaml || true"
     timeout: 180
 
 - id: update_hosts

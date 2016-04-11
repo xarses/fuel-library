@@ -111,11 +111,11 @@ class openstack_tasks::murano::murano {
       use_stderr          => $use_stderr,
       log_facility        => $syslog_log_facility_murano,
       database_connection => $db_connection,
-      sync_db             => $primary_controller,
-      auth_uri            => "${public_auth_protocol}://${public_auth_address}:5000/",
-      admin_user          => $murano_user,
-      admin_password      => $murano_hash['user_password'],
-      admin_tenant_name   => $tenant,
+      #sync_db             => $primary_controller,
+      keystone_uri        => "${public_auth_protocol}://${public_auth_address}:5000/v2.0/",
+      keystone_username   => $murano_user,
+      keystone_password   => $murano_hash['user_password'],
+      keystone_tenant     => $tenant,
       identity_uri        => "${admin_auth_protocol}://${admin_auth_address}:35357/",
       notification_driver => 'messagingv2',
       use_neutron         => $use_neutron,
@@ -138,14 +138,30 @@ class openstack_tasks::murano::murano {
       use_trusts          => true,
     }
 
+  # TODO (iberezovskiy): Move to globals (as it is done for sahara)
+  # after new sync with upstream because of
+  # https://github.com/openstack/puppet-murano/blob/master/manifests/init.pp#L237
+  if $default_log_levels {
+    murano_config {
+      'DEFAULT/default_log_levels':
+        value => join(sort(join_keys_to_values($default_log_levels, '=')), ',');
+    }
+  } else {
+    murano_config {
+      'DEFAULT/default_log_levels': ensure => absent;
+    }
+  }
+
+
+
     class { '::murano::api':
       host    => $api_bind_host,
       port    => $api_bind_port,
-      sync_db => false,
+      #sync_db => false,
     }
 
     class { '::murano::engine':
-      sync_db => false,
+      #sync_db => false,
     }
 
     class { '::murano::client': }
@@ -188,7 +204,14 @@ class openstack_tasks::murano::murano {
       $admin_identity_url = "${admin_auth_protocol}://${admin_auth_address}:35357"
 
       class { '::osnailyfacter::wait_for_keystone_backends':}
-      murano::application { 'io.murano' : }
+      murano::application { 'io.murano' :
+        os_tenant_name => $tenant,
+        os_username    => $murano_user,
+        os_password    => $murano_hash['user_password'],
+        os_auth_url    => "${public_auth_protocol}://${public_auth_address}:5000/v2.0/",
+        os_region      => $region,
+        mandatory      => true,
+     }
 
       Class['::osnailyfacter::wait_for_keystone_backends'] -> ::Osnailyfacter::Wait_for_backend['murano-api']
       ::Osnailyfacter::Wait_for_backend['murano-api'] -> Murano::Application['io.murano']
@@ -198,6 +221,12 @@ class openstack_tasks::murano::murano {
 
     Firewall[$firewall_rule] -> Class['::murano::api']
     Service['murano-api'] -> ::Osnailyfacter::Wait_for_backend['murano-api']
+    # Fix murano ordering issue
+    # murano_config resource tries to add some options to /etc/murano/murano.conf
+    # while this file (and directory /etc/murano at all) does not exist
+    # Debian package 'murano-common' creates /etc/murano directory and thus
+    # should be installed first
+    Package['murano-common'] -> Murano_config<||>
 
     # TODO (iberezovskiy): remove this workaround in N when murano module
     # will be switched to puppet-oslo usage for rabbit configuration

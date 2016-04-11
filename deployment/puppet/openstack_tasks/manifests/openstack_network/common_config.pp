@@ -70,7 +70,7 @@ class openstack_tasks::openstack_network::common_config {
       debug                   => $debug,
       use_syslog              => $use_syslog,
       use_stderr              => $use_stderr,
-      lock_path               => '/var/lib/neutron/lock',
+      #lock_path               => '/var/lib/neutron/lock',
       log_facility            => $log_facility,
       bind_host               => $bind_host,
       base_mac                => $base_mac,
@@ -85,7 +85,7 @@ class openstack_tasks::openstack_network::common_config {
       rabbit_hosts            => $amqp_hosts,
       rabbit_password         => $amqp_password,
       network_device_mtu      => $physical_net_mtu,
-      advertise_mtu           => true,
+      #advertise_mtu           => true,
     }
 
     # TODO (iberezovskiy): remove this workaround in N when neutron module

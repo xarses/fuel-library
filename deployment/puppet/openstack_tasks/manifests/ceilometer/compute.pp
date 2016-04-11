@@ -47,7 +47,7 @@ class openstack_tasks::ceilometer::compute {
       http_timeout               => $ceilometer_hash['http_timeout'],
       event_time_to_live         => $ceilometer_hash['event_time_to_live'],
       metering_time_to_live      => $ceilometer_hash['metering_time_to_live'],
-      alarm_history_time_to_live => $ceilometer_hash['alarm_history_time_to_live'],
+      #alarm_history_time_to_live => $ceilometer_hash['alarm_history_time_to_live'],
       rabbit_hosts               => split(hiera('amqp_hosts',''), ','),
       rabbit_userid              => $amqp_user,
       rabbit_password            => $amqp_password,
@@ -84,6 +84,12 @@ class openstack_tasks::ceilometer::compute {
           groups => ['nova', 'libvirt'],
         }
       }
+    }
+
+    include ::nova::params
+    service { 'nova-compute':
+      ensure => 'stopped',
+      name   => $::nova::params::compute_service_name,
     }
 
     class { '::ceilometer::agent::polling':

@@ -18,9 +18,20 @@ class openstack_tasks::murano::rabbitmq {
 
   $rabbit_node_name     = 'murano@localhost'
   $rabbit_service_name  = 'murano-rabbitmq'
+  $openstack_release    = 'stable/kilo'
 
   #################################################################
 
+if $openstack_release == 'stable/kilo'
+{
+    include ::murano::params
+    class { '::murano::rabbitmq':
+      rabbit_user      =>  $rabbit_user,
+      rabbit_password  => $rabbit_password,
+      rabbit_port      => '55572',
+      rabbit_vhost     => $rabbit_vhost,
+    }
+} else {
   package { 'murano-rabbitmq':
     ensure => present,
   }
@@ -64,5 +75,8 @@ class openstack_tasks::murano::rabbitmq {
       Exec['create_murano_user'] ->
         Exec['create_murano_vhost'] ->
           Exec['set_murano_user_permissions']
+}
+
+
 
 }

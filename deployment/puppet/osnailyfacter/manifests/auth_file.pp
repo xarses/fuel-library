@@ -48,6 +48,7 @@ class osnailyfacter::auth_file(
   $admin_password,
   $controller_node          = '127.0.0.1',
   $auth_url                 = 'http://127.0.0.1:5000/v2.0',
+  $auth_version             = '2.0',
   $keystone_admin_token     = undef,
   $admin_user               = 'admin',
   $admin_tenant             = 'openstack',
@@ -63,6 +64,9 @@ class osnailyfacter::auth_file(
   $cacert                   = undef,
   $murano_glare_plugin      = undef,
 ) {
+
+  # TODO(xarses): Add a check to ensure that if auth_version == '2.0'
+  # that auth_url ends in 'v2.0' 
 
   warning('Class osnailyfacter::auth_file is deprecated, please consider using osnailyfacter::credentials_file instead')
 

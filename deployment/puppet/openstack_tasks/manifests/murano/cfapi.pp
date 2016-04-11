@@ -19,61 +19,68 @@ class openstack_tasks::murano::cfapi {
 
   $service_endpoint           = hiera('service_endpoint')
   $external_lb                = hiera('external_lb', false)
+  $openstack_release          = 'stable/kilo'
 
   #################################################################
 
-  if $murano_cfapi_hash['enabled'] {
+  # Disable cfapi for Openstack Kilo Murano as it is not supported
+  # in Kilo release
+  if $openstack_release == 'stable/kilo' {
+        notice("Using 'stable/kilo' Openstack release. MODULAR: murano/cfapi.pp task will be skipped. Kilo version of Murano does not support cfapi")
+  } else {
+    if $murano_cfapi_hash['enabled'] {
 
-    $firewall_rule  = '203 murano-cfapi'
+      $firewall_rule  = '203 murano-cfapi'
 
-    $cfapi_bind_port = '8083'
+      $cfapi_bind_port = '8083'
 
-    firewall { $firewall_rule :
-      dport  => $cfapi_bind_port,
-      proto  => 'tcp',
-      action => 'accept',
-    }
-
-    ####### Disable upstart startup on install #######
-    tweaks::ubuntu_service_override { ['murano-cfapi']:
-      package_name => 'murano-cfapi',
-    }
-
-    class { '::murano::cfapi' :
-      tenant    => $access_hash['tenant'],
-      bind_host => $cfapi_bind_host,
-      bind_port => $cfapi_bind_port,
-      auth_url  => "${public_auth_protocol}://${public_auth_address}:5000/v3",
-    }
-
-    $haproxy_stats_url = "http://${management_ip}:10000/;csv"
-
-    $murano_cfapi_protocol = get_ssl_property($ssl_hash, {}, 'murano', 'internal', 'protocol', 'http')
-    $murano_cfapi_address  = get_ssl_property($ssl_hash, {}, 'murano', 'internal', 'hostname', [$service_endpoint, $management_vip])
-    $murano_cfapi_url      = "${murano_cfapi_protocol}://${murano_cfapi_address}:${cfapi_bind_port}"
-
-    $lb_defaults = { 'provider' => 'haproxy', 'url' => $haproxy_stats_url }
-
-    if $external_lb {
-      $lb_backend_provider = 'http'
-      $lb_url = $murano_cfapi_url
-    }
-
-    $lb_hash = {
-      'murano-cfapi'      => {
-        name     => 'murano-cfapi',
-        provider => $lb_backend_provider,
-        url      => $lb_url
+      firewall { $firewall_rule :
+        dport  => $cfapi_bind_port,
+        proto  => 'tcp',
+        action => 'accept',
       }
-    }
 
-    ::osnailyfacter::wait_for_backend {'murano-cfapi':
-      lb_hash     => $lb_hash,
-      lb_defaults => $lb_defaults
-    }
+      ####### Disable upstart startup on install #######
+      tweaks::ubuntu_service_override { ['murano-cfapi']:
+        package_name => 'murano-cfapi',
+      }
 
-    Firewall[$firewall_rule] -> Class['::murano::cfapi']
-    Service['murano-cfapi'] -> ::Osnailyfacter::Wait_for_backend['murano-cfapi']
+      class { '::murano::cfapi' :
+        tenant    => $access_hash['tenant'],
+        bind_host => $cfapi_bind_host,
+        bind_port => $cfapi_bind_port,
+        auth_url  => "${public_auth_protocol}://${public_auth_address}:5000/v3",
+      }
+
+      $haproxy_stats_url = "http://${management_ip}:10000/;csv"
+
+      $murano_cfapi_protocol = get_ssl_property($ssl_hash, {}, 'murano', 'internal', 'protocol', 'http')
+      $murano_cfapi_address  = get_ssl_property($ssl_hash, {}, 'murano', 'internal', 'hostname', [$service_endpoint, $management_vip])
+      $murano_cfapi_url      = "${murano_cfapi_protocol}://${murano_cfapi_address}:${cfapi_bind_port}"
+
+      $lb_defaults = { 'provider' => 'haproxy', 'url' => $haproxy_stats_url }
+
+      if $external_lb {
+        $lb_backend_provider = 'http'
+        $lb_url = $murano_cfapi_url
+      }
+
+      $lb_hash = {
+        'murano-cfapi'      => {
+          name     => 'murano-cfapi',
+          provider => $lb_backend_provider,
+          url      => $lb_url
+        }
+      }
+
+      ::osnailyfacter::wait_for_backend {'murano-cfapi':
+        lb_hash     => $lb_hash,
+        lb_defaults => $lb_defaults
+      }
+
+      Firewall[$firewall_rule] -> Class['::murano::cfapi']
+      Service['murano-cfapi'] -> ::Osnailyfacter::Wait_for_backend['murano-cfapi']
+    }
   }
 
 }

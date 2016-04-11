@@ -105,7 +105,6 @@ class osnailyfacter::globals::globals {
   $syslog_log_facility_ceilometer = hiera('syslog_log_facility_ceilometer','LOG_LOCAL0')
   $syslog_log_facility_ceph       = hiera('syslog_log_facility_ceph','LOG_LOCAL0')
   $syslog_log_facility_ironic     = hiera('syslog_log_facility_ironic','LOG_LOCAL0')
-  $syslog_log_facility_aodh       = hiera('syslog_log_facility_aodh','LOG_LOCAL0')
 
   $kombu_compression              = hiera('kombu_compression', '')
 
@@ -385,10 +384,6 @@ class osnailyfacter::globals::globals {
   # todo: use special node-roles instead controllers in the future
   $ceilometer_nodes = $controller_nodes
 
-  # Define aodh-related variables:
-  # todo: use special node-roles instead controllers in the future
-  $aodh_nodes = $controller_nodes
-
   # Define memcached-related variables:
   $memcache_roles = hiera('memcache_roles', ['primary-controller', 'controller'])
 
@@ -444,9 +439,6 @@ class osnailyfacter::globals::globals {
   }
 
   $real_ceilometer_hash = merge($ceilometer_defaults, $ceilometer)
-
-  # Define aodh-related paramteres
-  $aodh = hiera('aodh', {})
 
   # Define database-related variables:
   # todo: use special node-roles instead controllers in the future

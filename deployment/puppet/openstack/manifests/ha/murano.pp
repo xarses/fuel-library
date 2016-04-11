@@ -75,20 +75,20 @@ class openstack::ha::murano (
     },
   }
 
-  if $murano_cfapi {
-    openstack::ha::haproxy_service { 'murano-cfapi':
-      order                  => '192',
-      listen_port            => 8083,
-      public_ssl             => $public_ssl,
-      public_ssl_path        => $public_ssl_path,
-      internal_ssl           => $internal_ssl,
-      internal_ssl_path      => $internal_ssl_path,
-      require_service        => 'murano_cfapi',
-      haproxy_config_options => {
-        'http-request' => 'set-header X-Forwarded-Proto https if { ssl_fc }',
-      },
-    }
-  }
+  #  if $murano_cfapi {
+  #    openstack::ha::haproxy_service { 'murano-cfapi':
+  #      order                  => '192',
+  #      listen_port            => 8083,
+  #      public_ssl             => $public_ssl,
+  #      public_ssl_path        => $public_ssl_path,
+  #      internal_ssl           => $internal_ssl,
+  #      internal_ssl_path      => $internal_ssl_path,
+  #      require_service        => 'murano_cfapi',
+  #      haproxy_config_options => {
+  #        'http-request' => 'set-header X-Forwarded-Proto https if { ssl_fc }',
+  #      },
+  #    }
+  #  }
 
   openstack::ha::haproxy_service { 'murano_rabbitmq':
     order                  => '191',

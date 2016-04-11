@@ -1,22 +1,51 @@
 class openstack_tasks::openstack_cinder::create_cinder_types {
 
-  notice('MODULAR: openstack_cinder/create_cinder_types.pp')
+#TODO (degorenko): remove this define, when Puppet will be upgraded to 4.x version
+define create_cinder_types (
+  $volume_backend_names,
+  $os_password,
+  $os_tenant_name = 'admin',
+  $os_username    = 'admin',
+  $os_auth_url    = 'http://127.0.0.1:5000/v2.0/',
+  $os_region_name = 'RegionOne',
+  $vtype          = $name,
+  $key            = 'volume_backend_name',
+) {
 
-  $storage_hash    = hiera_hash('storage', {})
-  $backends        = $storage_hash['volume_backend_names']
+  include ::cinder::client
 
-  $available_backends        = delete_values($backends, false)
-  $available_backend_names   = keys($available_backends)
-
-  $unavailable_backends      = delete($backends, $available_backend_names)
-  $unavailable_backend_names = keys($unavailable_backends)
-
-  ::osnailyfacter::openstack::manage_cinder_types { $available_backend_names:
-    ensure               => 'present',
-    volume_backend_names => $available_backends,
+  cinder::type { $vtype:
+    os_password    => $os_password,
+    set_key        => $key,
+    set_value      => $volume_backend_names[$vtype],
+    os_tenant_name => $os_tenant_name,
+    os_username    => $os_username,
+    os_auth_url    => $os_auth_url,
+    os_region_name => $os_region_name,
   }
-  ::osnailyfacter::openstack::manage_cinder_types { $unavailable_backend_names:
-    ensure => 'absent',
-  }
+}
+
+$access_hash     = hiera_hash('access', {})
+$public_vip      = hiera('public_vip')
+$public_ssl_hash = hiera_hash('public_ssl')
+$ssl_hash        = hiera_hash('use_ssl', {})
+$region          = hiera('region', 'RegionOne')
+$storage_hash    = hiera_hash('storage', {})
+$backends        = $storage_hash['volume_backend_names']
+
+$public_protocol    = get_ssl_property($ssl_hash, $public_ssl_hash, 'keystone', 'public', 'protocol', 'http')
+$public_address     = get_ssl_property($ssl_hash, $public_ssl_hash, 'keystone', 'public', 'hostname', [$public_vip])
+$available_backends = delete_values($backends, false)
+$backend_names      = keys($available_backends)
+
+create_cinder_types { $backend_names:
+  volume_backend_names => $available_backends,
+  os_password          => $access_hash['password'],
+  os_tenant_name       => $access_hash['tenant'],
+  os_username          => $access_hash['user'],
+  os_auth_url          => "${public_protocol}://${public_address}:5000/v2.0/",
+  os_region_name       => $region,
+}
+
 
 }

@@ -8,7 +8,7 @@ class openstack_tasks::openstack_network::compute_nova {
   $use_neutron = hiera('use_neutron', false)
 
   if $use_neutron {
-    include ::nova::params
+    include nova::params
     $neutron_config             = hiera_hash('neutron_config', {})
     $neutron_integration_bridge = 'br-int'
     $nova_hash                  = hiera_hash('nova', {})
@@ -20,7 +20,7 @@ class openstack_tasks::openstack_network::compute_nova {
     $admin_tenant_name          = try_get_value($neutron_config, 'keystone/admin_tenant', 'services')
     $admin_username             = try_get_value($neutron_config, 'keystone/admin_user', 'neutron')
     $region_name                = hiera('region', 'RegionOne')
-    $auth_api_version           = 'v3'
+    $auth_api_version           = 'v2.0'
     $ssl_hash                   = hiera_hash('use_ssl', {})
 
     $admin_identity_protocol    = get_ssl_property($ssl_hash, {}, 'keystone', 'admin', 'protocol', 'http')
@@ -34,12 +34,23 @@ class openstack_tasks::openstack_network::compute_nova {
 
     $nova_migration_ip          =  get_network_role_property('nova/migration', 'ipaddr')
 
-    service { 'libvirt' :
-      ensure   => 'running',
-      enable   => true,
-      name     => $::nova::params::libvirt_service_name,
-      provider => $::nova::params::special_service_provider,
-    }
+  # TODO(aschultz): Just use $::nova::params::libvirt_service_name when a
+  # version of puppet-nova has been pulled in that uses os_package_type to
+  # correctly handle the service names for ubuntu vs debian. Upstream bug
+  # LP#1515076
+  # NOTE: for debian packages and centos the name is the same ('libvirtd') so
+  # we are defaulting to that for backwards compatibility. LP#1469308
+  $libvirt_service_name = $::os_package_type ? {
+    'ubuntu' => $::nova::params::libvirt_service_name,
+    default  => 'libvirtd'
+  }
+
+  service { 'libvirt' :
+    ensure   => 'running',
+    enable   => true,
+    name     => $libvirt_service_name,
+    provider => $nova::params::special_service_provider,
+  }
 
     exec { 'destroy_libvirt_default_network':
       command => 'virsh net-destroy default',
@@ -77,11 +88,11 @@ class openstack_tasks::openstack_network::compute_nova {
     }
 
     class { '::nova::network::neutron' :
-      neutron_password     => $admin_password,
-      neutron_project_name => $admin_tenant_name,
+      neutron_admin_password     => $admin_password,
+      neutron_admin_tenant_name => $admin_tenant_name,
       neutron_region_name  => $region_name,
-      neutron_username     => $admin_username,
-      neutron_auth_url     => $neutron_auth_url,
+      neutron_admin_username     => $admin_username,
+      neutron_admin_auth_url     => $neutron_auth_url,
       neutron_url          => $neutron_url,
       neutron_ovs_bridge   => $neutron_integration_bridge,
     }

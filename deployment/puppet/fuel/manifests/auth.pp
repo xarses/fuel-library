@@ -47,14 +47,14 @@ class fuel::auth(
     ensure   => present,
     enabled  => 'True',
     password => $password,
-    domain   => $keystone_domain,
+#    domain   => $keystone_domain,
   }
 
   keystone_user_role { "${auth_name}@services":
     ensure         => present,
     roles          => ['admin'],
-    user_domain    => $keystone_domain,
-    project_domain => $keystone_domain,
+#    user_domain    => $keystone_domain,
+#    project_domain => $keystone_domain,
   }
 
   keystone_service { 'nailgun':
@@ -68,7 +68,7 @@ class fuel::auth(
     public_url   => "http://${public_address_real}:${port}/api",
     admin_url    => "http://${admin_address_real}:${port}/api",
     internal_url => "http://${internal_address_real}:${port}/api",
-    type         => 'fuel',
+#    type         => 'fuel',
     require      => Keystone_Service['nailgun'],
   }
 }

@@ -40,12 +40,12 @@ class openstack_tasks::openstack_controller::db {
       allowed_hosts => $allowed_hosts,
     }
 
-    class { '::nova::db::mysql_api':
-      user          => $api_db_user,
-      password      => $api_db_password,
-      dbname        => $api_db_name,
-      allowed_hosts => $allowed_hosts,
-    }
+    #    class { '::nova::db::mysql_api':
+    #      user          => $api_db_user,
+    #      password      => $api_db_password,
+    #      dbname        => $api_db_name,
+    #      allowed_hosts => $allowed_hosts,
+    #    }
 
     class { '::osnailyfacter::mysql_access':
       db_host     => $db_host,
