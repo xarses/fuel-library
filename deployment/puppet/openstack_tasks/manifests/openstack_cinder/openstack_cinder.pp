@@ -140,7 +140,7 @@ class openstack_tasks::openstack_cinder::openstack_cinder {
     database_connection    => $db_connection,
     verbose                => $verbose,
     use_syslog             => $use_syslog,
-    use_stderr             => $use_stderr,
+    #use_stderr             => $use_stderr, #9-kilo
     log_facility           => hiera('syslog_log_facility_cinder', 'LOG_LOCAL3'),
     debug                  => $debug,
     database_idle_timeout  => $idle_timeout,
@@ -148,7 +148,7 @@ class openstack_tasks::openstack_cinder::openstack_cinder {
     database_max_retries   => $max_retries,
     database_max_overflow  => $max_overflow,
     control_exchange       => 'cinder',
-    rabbit_ha_queues       => true,
+    #rabbit_ha_queues       => true, #9-kilo
   }
 
   cinder_config {
@@ -166,11 +166,11 @@ class openstack_tasks::openstack_cinder::openstack_cinder {
       bind_host                    => $bind_host,
       ratelimits                   => hiera('cinder_rate_limits'),
       service_workers              => $service_workers,
-      privileged_user              => true,
-      os_privileged_user_password  => $cinder_user_password,
-      os_privileged_user_tenant    => $keystone_tenant,
-      os_privileged_user_auth_url  => $privileged_auth_uri,
-      os_privileged_user_name      => $keystone_user,
+      #privileged_user              => true, #9-kilo
+      #os_privileged_user_password  => $cinder_user_password, #9-kilo
+      #os_privileged_user_tenant    => $keystone_tenant, #9-kilo
+      #os_privileged_user_auth_url  => $privileged_auth_uri, #9-kilo
+      #os_privileged_user_name      => $keystone_user, #9-kilo
       keymgr_encryption_auth_url   => $keymgr_encryption_auth_url,
       nova_catalog_admin_info      => 'compute:nova:adminURL',
       nova_catalog_info            => 'compute:nova:internalURL',
@@ -239,7 +239,7 @@ class openstack_tasks::openstack_cinder::openstack_cinder {
 
         class { 'cinder::backup::swift':
           backup_swift_url      => "${swift_url}/v1/AUTH_",
-          backup_swift_auth_url => "${auth_uri}/v2.0",
+          #backup_swift_auth_url => $auth_uri,  #9-kilo
         }
       }
       'ceph': {

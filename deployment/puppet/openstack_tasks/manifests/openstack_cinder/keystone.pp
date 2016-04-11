@@ -53,9 +53,9 @@ class openstack_tasks::openstack_cinder::keystone {
     public_url_v2       => "${public_base_url}/v2/%(tenant_id)s",
     internal_url_v2     => "${internal_base_url}/v2/%(tenant_id)s",
     admin_url_v2        => "${admin_base_url}/v2/%(tenant_id)s",
-    public_url_v3       => "${public_base_url}/v3/%(tenant_id)s",
-    internal_url_v3     => "${internal_base_url}/v3/%(tenant_id)s",
-    admin_url_v3        => "${admin_base_url}/v3/%(tenant_id)s",
+    #public_url_v3       => "${public_base_url}/v3/%(tenant_id)s", #9-kilo
+    #internal_url_v3     => "${internal_base_url}/v3/%(tenant_id)s", #9-kilo
+    #admin_url_v3        => "${admin_base_url}/v3/%(tenant_id)s", #9-kilo
     region              => $region,
     tenant              => $tenant,
   }

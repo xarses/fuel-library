@@ -187,7 +187,7 @@ class openstack_tasks::roles::cinder {
     database_connection    => $db_connection,
     verbose                => $verbose,
     use_syslog             => $use_syslog,
-    use_stderr             => $use_stderr,
+    #use_stderr             => $use_stderr, #9-kilo
     log_facility           => hiera('syslog_log_facility_cinder', 'LOG_LOCAL3'),
     debug                  => $debug,
     database_idle_timeout  => $idle_timeout,
@@ -254,7 +254,7 @@ class openstack_tasks::roles::cinder {
 
         class { 'cinder::backup::swift':
           backup_swift_url      => "${swift_url}/v1/AUTH_",
-          backup_swift_auth_url => "${auth_uri}/v2.0",
+          #backup_swift_auth_url => $auth_uri, #9-kilo
         }
       }
       'ceph': {
