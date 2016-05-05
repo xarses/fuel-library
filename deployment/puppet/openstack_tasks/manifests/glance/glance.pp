@@ -269,7 +269,7 @@ class openstack_tasks::glance::glance {
       class { '::glance::backend::rbd':
         rbd_store_user        => 'images',
         rbd_store_pool        => 'images',
-        rados_connect_timeout => $rados_connect_timeout,
+#        rados_connect_timeout => $rados_connect_timeout, #9-kilo
 #        glare_enabled         => true,
       }
     }
