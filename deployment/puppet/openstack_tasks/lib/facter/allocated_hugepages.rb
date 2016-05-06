@@ -1,5 +1,6 @@
 # This fact returns a hash with numbers of allocated 1G and 2M huge pages
 # Currently Nailgun doesn't provide this informaion due to LP #1560532
+require 'json'
 
 hugepages = {"1G"=>false, "2M"=>false}
 
